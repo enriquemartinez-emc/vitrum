@@ -14,13 +14,21 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { FileTextIcon, ShoppingCartIcon, CameraIcon, Settings2Icon, PackageIcon, CommandIcon } from "lucide-react"
+import { FileTextIcon, ShoppingCartIcon, CameraIcon, Settings2Icon, PackageIcon, CommandIcon, LayoutDashboardIcon } from "lucide-react"
 
 const data = {
   user: {
     name: "admin",
     email: "m@example.com",
     avatar: "/avatars/shadcn.jpg",
+  },
+  navTop: {
+    title: "Dashboard",
+    url: "/dashboard",
+    icon: (
+      <LayoutDashboardIcon
+      />
+    ),
   },
   navMain: [
     {
@@ -40,7 +48,7 @@ const data = {
         },
         {
           title: "Customers",
-          url: "#",
+          url: "/dashboard/customers",
         },
       ],
     },
@@ -147,7 +155,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
+        <NavMain topLink={data.navTop} items={data.navMain} />
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>
