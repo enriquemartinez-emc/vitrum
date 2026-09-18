@@ -8,6 +8,7 @@ import { approveQuote, declineQuote, priceLineItem } from "@/core/quotes/quote.r
 import { newQuoteLineItemSchema, quoteIdSchema } from "@/core/quotes/quote.types"
 import type { QuoteFormState } from "@/features/quotes/form-state"
 import * as repository from "@/features/quotes/repository"
+import type { QuoteDetail } from "@/features/quotes/repository"
 import * as glassTypesRepository from "@/features/products/glass-types.repository"
 import * as windowTypesRepository from "@/features/products/window-types.repository"
 
@@ -77,6 +78,10 @@ export async function createQuoteAction(
   revalidatePath("/dashboard/quotes")
 
   return { status: "success" }
+}
+
+export async function getQuoteDetailAction(id: number): Promise<QuoteDetail | null> {
+  return repository.getQuoteDetail(quoteIdSchema.parse(id))
 }
 
 export async function approveQuoteAction(id: number): Promise<void> {

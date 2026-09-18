@@ -23,6 +23,8 @@ import type { Database } from "@/lib/db/types"
 type QuoteRow = Database["public"]["Tables"]["quotes"]["Row"]
 type QuoteLineItemRow = Database["public"]["Tables"]["quote_line_items"]["Row"]
 type CustomerRow = Database["public"]["Tables"]["customers"]["Row"]
+type WindowTypeRow = Database["public"]["Tables"]["window_types"]["Row"]
+type GlassTypeRow = Database["public"]["Tables"]["glass_types"]["Row"]
 
 function toQuoteLineItem(row: QuoteLineItemRow): QuoteLineItem {
   return quoteLineItemSchema.parse({
@@ -158,6 +160,75 @@ export async function getQuote(id: QuoteId): Promise<Quote | null> {
   if (lineItemsError) throw lineItemsError
 
   return toQuote(quoteRow, lineItemRows)
+}
+
+export type QuoteDetailLineItem = {
+  id: QuoteLineItemRow["id"]
+  windowTypeName: string
+  glassTypeName: string
+  widthIn: QuoteLineItemRow["width_in"]
+  heightIn: QuoteLineItemRow["height_in"]
+  quantity: QuoteLineItemRow["quantity"]
+  unitPrice: Money
+  lineTotal: Money
+}
+
+export type QuoteDetail = {
+  id: QuoteId
+  customerName: string
+  status: QuoteStatus
+  approvedAt: string | null
+  declinedAt: string | null
+  createdAt: string
+  lineItems: QuoteDetailLineItem[]
+  total: Money
+}
+
+type QuoteDetailRow = QuoteRow & {
+  customers: Pick<CustomerRow, "first_name" | "last_name"> | null
+  quote_line_items: (QuoteLineItemRow & {
+    window_types: Pick<WindowTypeRow, "name"> | null
+    glass_types: Pick<GlassTypeRow, "name"> | null
+  })[]
+}
+
+export async function getQuoteDetail(id: QuoteId): Promise<QuoteDetail | null> {
+  const { data: row, error } = await getDb()
+    .from("quotes")
+    .select(
+      "*, customers(first_name,last_name), quote_line_items(*, window_types(name), glass_types(name))"
+    )
+    .eq("id", id)
+    .maybeSingle<QuoteDetailRow>()
+
+  if (error) throw error
+  if (!row) return null
+
+  const lineItems = row.quote_line_items.map((lineItem) => ({
+    id: lineItem.id,
+    windowTypeName: lineItem.window_types?.name ?? "Unknown window type",
+    glassTypeName: lineItem.glass_types?.name ?? "Unknown glass type",
+    widthIn: lineItem.width_in,
+    heightIn: lineItem.height_in,
+    quantity: lineItem.quantity,
+    unitPrice: moneySchema.parse(lineItem.unit_price_cents),
+    lineTotal: moneySchema.parse(lineItem.line_total_cents),
+  }))
+
+  return {
+    id: quoteIdSchema.parse(row.id),
+    customerName: row.customers
+      ? `${row.customers.first_name} ${row.customers.last_name}`
+      : "Unknown customer",
+    status: quoteStatusSchema.parse(row.status),
+    approvedAt: row.approved_at,
+    declinedAt: row.declined_at,
+    createdAt: row.created_at,
+    lineItems,
+    total: moneySchema.parse(
+      lineItems.reduce((sum, lineItem) => sum + lineItem.lineTotal, 0)
+    ),
+  }
 }
 
 export async function insertQuote(
