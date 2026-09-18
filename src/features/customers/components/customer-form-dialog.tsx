@@ -31,6 +31,22 @@ type CustomerFormDialogProps = {
   onOpenChange: (open: boolean) => void
 } & ({ mode: "create" } | { mode: "edit"; customer: Customer })
 
+type FormValues = {
+  firstName: string
+  lastName: string
+  phoneNumber: string
+  address: string
+}
+
+function valuesFor(customer: Customer | undefined): FormValues {
+  return {
+    firstName: customer?.firstName ?? "",
+    lastName: customer?.lastName ?? "",
+    phoneNumber: customer?.phoneNumber ?? "",
+    address: customer?.address ?? "",
+  }
+}
+
 function asFieldErrors(messages?: string[]) {
   return messages?.map((message) => ({ message }))
 }
@@ -53,30 +69,30 @@ export function CustomerFormDialog(props: CustomerFormDialogProps) {
     }
   }, [state, onOpenChange])
 
-  // Snapshot the customer for the duration of this open session. Refreshed
-  // exactly when the dialog transitions closed -> open, so a background
-  // revalidation (e.g. this same dialog's own successful submit, which
-  // updates `customer` moments before `onOpenChange(false)` takes effect)
-  // can't change an uncontrolled input's defaultValue while it's still open.
-  const initialCustomer = mode === "edit" ? props.customer : undefined
-  const [customer, setCustomer] = useState(initialCustomer)
+  // Controlled fields, seeded fresh each time the dialog opens (not on every
+  // render — see the ref-guarded block below), so a failed submit keeps
+  // whatever the user typed instead of the browser's native form reset
+  // wiping it back to blank.
+  const customer = mode === "edit" ? props.customer : undefined
+  const [values, setValues] = useState(() => valuesFor(customer))
   const wasOpen = useRef(open)
 
   if (open && !wasOpen.current) {
     wasOpen.current = true
-    if (customer !== initialCustomer) setCustomer(initialCustomer)
+    setValues(valuesFor(customer))
   } else if (!open && wasOpen.current) {
     wasOpen.current = false
+  }
+
+  function updateField<Field extends keyof FormValues>(field: Field) {
+    return (event: React.ChangeEvent<HTMLInputElement>) =>
+      setValues((prev) => ({ ...prev, [field]: event.target.value }))
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
-        <form
-          action={formAction}
-          key={customer?.id ?? "new"}
-          className="flex flex-col gap-4"
-        >
+        <form action={formAction} className="flex flex-col gap-4">
           <DialogHeader>
             <DialogTitle>
               {mode === "create" ? "Add customer" : "Edit customer"}
@@ -93,7 +109,8 @@ export function CustomerFormDialog(props: CustomerFormDialogProps) {
               <Input
                 id="firstName"
                 name="firstName"
-                defaultValue={customer?.firstName}
+                value={values.firstName}
+                onChange={updateField("firstName")}
                 aria-invalid={!!state.fieldErrors?.firstName}
                 required
               />
@@ -104,7 +121,8 @@ export function CustomerFormDialog(props: CustomerFormDialogProps) {
               <Input
                 id="lastName"
                 name="lastName"
-                defaultValue={customer?.lastName}
+                value={values.lastName}
+                onChange={updateField("lastName")}
                 aria-invalid={!!state.fieldErrors?.lastName}
                 required
               />
@@ -116,7 +134,8 @@ export function CustomerFormDialog(props: CustomerFormDialogProps) {
                 id="phoneNumber"
                 name="phoneNumber"
                 type="tel"
-                defaultValue={customer?.phoneNumber}
+                value={values.phoneNumber}
+                onChange={updateField("phoneNumber")}
                 aria-invalid={!!state.fieldErrors?.phoneNumber}
                 required
               />
@@ -129,7 +148,8 @@ export function CustomerFormDialog(props: CustomerFormDialogProps) {
               <Input
                 id="address"
                 name="address"
-                defaultValue={customer?.address ?? ""}
+                value={values.address}
+                onChange={updateField("address")}
                 aria-invalid={!!state.fieldErrors?.address}
               />
               <FieldError errors={asFieldErrors(state.fieldErrors?.address)} />
