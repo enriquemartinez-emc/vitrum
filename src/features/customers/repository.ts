@@ -58,6 +58,18 @@ export async function listCustomers(page: number): Promise<CustomersPage> {
   }
 }
 
+export async function listAllCustomers(): Promise<Customer[]> {
+  const { data, error } = await getDb()
+    .from("customers")
+    .select()
+    .order("first_name", { ascending: true })
+    .order("last_name", { ascending: true })
+
+  if (error) throw error
+
+  return data.map(toCustomer)
+}
+
 export async function getCustomer(id: CustomerId): Promise<Customer | null> {
   const { data, error } = await getDb()
     .from("customers")

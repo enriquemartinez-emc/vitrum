@@ -57,6 +57,17 @@ export async function listWindowTypes(page: number): Promise<WindowTypesPage> {
   }
 }
 
+export async function listAllWindowTypes(): Promise<WindowType[]> {
+  const { data, error } = await getDb()
+    .from("window_types")
+    .select()
+    .order("name", { ascending: true })
+
+  if (error) throw error
+
+  return data.map(toWindowType)
+}
+
 export async function getWindowType(id: WindowTypeId): Promise<WindowType | null> {
   const { data, error } = await getDb()
     .from("window_types")

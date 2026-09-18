@@ -57,6 +57,17 @@ export async function listGlassTypes(page: number): Promise<GlassTypesPage> {
   }
 }
 
+export async function listAllGlassTypes(): Promise<GlassType[]> {
+  const { data, error } = await getDb()
+    .from("glass_types")
+    .select()
+    .order("name", { ascending: true })
+
+  if (error) throw error
+
+  return data.map(toGlassType)
+}
+
 export async function getGlassType(id: GlassTypeId): Promise<GlassType | null> {
   const { data, error } = await getDb()
     .from("glass_types")
