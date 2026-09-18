@@ -1,12 +1,13 @@
 import "server-only"
 
-import { getDb } from "@/lib/db/server"
 import {
   customerSchema,
   type Customer,
   type CustomerId,
   type NewCustomer,
 } from "@/core/customers/customer.types"
+import { paginate } from "@/lib/db/paginate"
+import { getDb } from "@/lib/db/server"
 import type { Database } from "@/lib/db/types"
 
 type CustomerRow = Database["public"]["Tables"]["customers"]["Row"]
@@ -34,36 +35,26 @@ export type CustomersPage = {
 }
 
 export async function listCustomers(page: number): Promise<CustomersPage> {
-  const pageSize = CUSTOMERS_PAGE_SIZE
-
-  const { count, error: countError } = await getDb()
-    .from("customers")
-    .select("*", { count: "exact", head: true })
-
-  if (countError) throw countError
-
-  const totalCount = count ?? 0
-  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize))
-  const currentPage = Math.min(Math.max(1, Math.trunc(page) || 1), totalPages)
-
-  const from = (currentPage - 1) * pageSize
-  const to = from + pageSize - 1
-
-  const { data, error } = await getDb()
-    .from("customers")
-    .select()
-    .order("created_at", { ascending: false })
-    .order("id", { ascending: false })
-    .range(from, to)
-
-  if (error) throw error
+  const result = await paginate<CustomerRow>({
+    page,
+    pageSize: CUSTOMERS_PAGE_SIZE,
+    count: () =>
+      getDb().from("customers").select("*", { count: "exact", head: true }),
+    data: ({ from, to }) =>
+      getDb()
+        .from("customers")
+        .select()
+        .order("created_at", { ascending: false })
+        .order("id", { ascending: false })
+        .range(from, to),
+  })
 
   return {
-    customers: data.map(toCustomer),
-    page: currentPage,
-    pageSize,
-    totalCount,
-    totalPages,
+    customers: result.items.map(toCustomer),
+    page: result.page,
+    pageSize: result.pageSize,
+    totalCount: result.totalCount,
+    totalPages: result.totalPages,
   }
 }
 
