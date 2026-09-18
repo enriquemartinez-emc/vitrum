@@ -1,5 +1,7 @@
 "use client"
 
+import Link from "next/link"
+
 import { Button } from "@/components/ui/button"
 import {
   Collapsible,
@@ -19,8 +21,14 @@ import {
 import { CirclePlusIcon, ReceiptTextIcon, ChevronRightIcon } from "lucide-react"
 
 export function NavMain({
+  topLink,
   items,
 }: {
+  topLink?: {
+    title: string
+    url: string
+    icon?: React.ReactNode
+  }
   items: {
     title: string
     icon?: React.ReactNode
@@ -55,6 +63,17 @@ export function NavMain({
           </SidebarMenuItem>
         </SidebarMenu>
         <SidebarMenu>
+          {topLink && (
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                tooltip={topLink.title}
+                render={<Link href={topLink.url} />}
+              >
+                {topLink.icon}
+                <span>{topLink.title}</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          )}
           {items.map((item) => (
             <Collapsible
               key={item.title}
@@ -75,7 +94,9 @@ export function NavMain({
                 <SidebarMenuSub>
                   {item.items.map((subItem) => (
                     <SidebarMenuSubItem key={subItem.title}>
-                      <SidebarMenuSubButton render={<a href={subItem.url} />}>
+                      <SidebarMenuSubButton
+                        render={<Link href={subItem.url} />}
+                      >
                         <span>{subItem.title}</span>
                       </SidebarMenuSubButton>
                     </SidebarMenuSubItem>
