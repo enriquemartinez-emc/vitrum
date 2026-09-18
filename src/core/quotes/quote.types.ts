@@ -10,6 +10,9 @@ import { quantitySchema } from "@/core/shared/quantity"
 export const quoteIdSchema = z.number().int().positive().brand<"QuoteId">()
 export type QuoteId = z.infer<typeof quoteIdSchema>
 
+export const quoteStatusSchema = z.enum(["pending", "approved", "declined"])
+export type QuoteStatus = z.infer<typeof quoteStatusSchema>
+
 export const quoteLineItemIdSchema = z
   .number()
   .int()
