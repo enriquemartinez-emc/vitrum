@@ -1,3 +1,4 @@
+import { SiteHeader } from "@/components/site-header"
 import { GlassTypesTable } from "@/features/products/components/glass-types-table"
 import { listGlassTypes } from "@/features/products/glass-types.repository"
 
@@ -15,5 +16,10 @@ export default async function GlassTypesPage({
 
   const glassTypesPage = await listGlassTypes(page)
 
-  return <GlassTypesTable glassTypesPage={glassTypesPage} />
+  return (
+    <>
+      <SiteHeader title="Glass Types" />
+      <GlassTypesTable glassTypesPage={glassTypesPage} />
+    </>
+  )
 }

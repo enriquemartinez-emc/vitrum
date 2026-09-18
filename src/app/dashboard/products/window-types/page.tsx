@@ -1,3 +1,4 @@
+import { SiteHeader } from "@/components/site-header"
 import { WindowTypesTable } from "@/features/products/components/window-types-table"
 import { listWindowTypes } from "@/features/products/window-types.repository"
 
@@ -15,5 +16,10 @@ export default async function WindowTypesPage({
 
   const windowTypesPage = await listWindowTypes(page)
 
-  return <WindowTypesTable windowTypesPage={windowTypesPage} />
+  return (
+    <>
+      <SiteHeader title="Window Types" />
+      <WindowTypesTable windowTypesPage={windowTypesPage} />
+    </>
+  )
 }

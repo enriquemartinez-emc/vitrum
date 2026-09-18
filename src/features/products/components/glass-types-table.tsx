@@ -38,7 +38,7 @@ export function GlassTypesTable({
   const lastRow = Math.min(page * pageSize, totalCount)
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4 px-4 py-4 md:gap-6 md:py-6 lg:px-6">
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
           {totalCount} {totalCount === 1 ? "glass type" : "glass types"}
