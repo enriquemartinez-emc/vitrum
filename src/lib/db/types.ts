@@ -64,6 +64,54 @@ export type Database = {
         }
         Relationships: []
       }
+      glass_types: {
+        Row: {
+          created_at: string
+          id: number
+          name: string
+          price_per_sqft_cents: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: never
+          name: string
+          price_per_sqft_cents: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: never
+          name?: string
+          price_per_sqft_cents?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      window_types: {
+        Row: {
+          created_at: string
+          id: number
+          labor_cost_cents: number
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: never
+          labor_cost_cents: number
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: never
+          labor_cost_cents?: number
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
