@@ -4,7 +4,6 @@ export function fullName(customer: Pick<Customer, "firstName" | "lastName">) {
   return `${customer.firstName} ${customer.lastName}`
 }
 
-/** Same-type edit: applies new details to an existing customer. */
 export function applyCustomerDetails(
   customer: Customer,
   details: CustomerDetails

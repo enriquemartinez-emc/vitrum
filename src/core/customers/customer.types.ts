@@ -25,7 +25,6 @@ export type PhoneNumber = z.infer<typeof phoneNumberSchema>
 export const addressSchema = trimmedNonEmpty(200).brand<"Address">()
 export type Address = z.infer<typeof addressSchema>
 
-/** A customer as persisted — always has an id and timestamps. */
 export const customerSchema = z.object({
   id: customerIdSchema,
   firstName: customerNameSchema,
@@ -37,7 +36,6 @@ export const customerSchema = z.object({
 })
 export type Customer = z.infer<typeof customerSchema>
 
-/** Input for creating a customer — no id/timestamps yet, those are assigned on persist. */
 export const newCustomerSchema = z.object({
   firstName: customerNameSchema,
   lastName: customerNameSchema,
@@ -46,6 +44,5 @@ export const newCustomerSchema = z.object({
 })
 export type NewCustomer = z.infer<typeof newCustomerSchema>
 
-/** Input for editing an existing customer's details. */
 export const customerDetailsSchema = newCustomerSchema
 export type CustomerDetails = z.infer<typeof customerDetailsSchema>
