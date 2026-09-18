@@ -27,6 +27,3 @@ export const newGlassTypeSchema = z.object({
   pricePerSqFt: moneySchema,
 })
 export type NewGlassType = z.infer<typeof newGlassTypeSchema>
-
-export const glassTypeDetailsSchema = newGlassTypeSchema
-export type GlassTypeDetails = z.infer<typeof glassTypeDetailsSchema>

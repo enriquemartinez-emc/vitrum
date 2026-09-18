@@ -27,6 +27,3 @@ export const newWindowTypeSchema = z.object({
   laborCost: moneySchema,
 })
 export type NewWindowType = z.infer<typeof newWindowTypeSchema>
-
-export const windowTypeDetailsSchema = newWindowTypeSchema
-export type WindowTypeDetails = z.infer<typeof windowTypeDetailsSchema>

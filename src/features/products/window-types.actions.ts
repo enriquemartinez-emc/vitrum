@@ -5,7 +5,6 @@ import { z } from "zod"
 
 import { moneyInputSchema } from "@/core/shared/money"
 import {
-  windowTypeDetailsSchema,
   windowTypeIdSchema,
   newWindowTypeSchema,
 } from "@/core/products/window-type.types"
@@ -51,7 +50,7 @@ export async function createWindowTypeAction(
     throw error
   }
 
-  revalidatePath("/dashboard/products")
+  revalidatePath("/dashboard/products/window-types")
 
   return { status: "success" }
 }
@@ -78,21 +77,19 @@ export async function updateWindowTypeAction(
     return { status: "error", message: "This window type no longer exists." }
   }
 
-  const details = windowTypeDetailsSchema.parse(parsed.data)
-
   try {
-    await repository.updateWindowType({ ...existing, ...details })
+    await repository.updateWindowType({ ...existing, ...parsed.data })
   } catch (error) {
     if (isUniqueViolation(error)) return DUPLICATE_NAME_ERROR
     throw error
   }
 
-  revalidatePath("/dashboard/products")
+  revalidatePath("/dashboard/products/window-types")
 
   return { status: "success" }
 }
 
 export async function deleteWindowTypeAction(id: number): Promise<void> {
   await repository.deleteWindowType(windowTypeIdSchema.parse(id))
-  revalidatePath("/dashboard/products")
+  revalidatePath("/dashboard/products/window-types")
 }

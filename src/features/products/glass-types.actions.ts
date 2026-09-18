@@ -5,7 +5,6 @@ import { z } from "zod"
 
 import { moneyInputSchema } from "@/core/shared/money"
 import {
-  glassTypeDetailsSchema,
   glassTypeIdSchema,
   newGlassTypeSchema,
 } from "@/core/products/glass-type.types"
@@ -51,7 +50,7 @@ export async function createGlassTypeAction(
     throw error
   }
 
-  revalidatePath("/dashboard/products")
+  revalidatePath("/dashboard/products/glass-types")
 
   return { status: "success" }
 }
@@ -78,21 +77,19 @@ export async function updateGlassTypeAction(
     return { status: "error", message: "This glass type no longer exists." }
   }
 
-  const details = glassTypeDetailsSchema.parse(parsed.data)
-
   try {
-    await repository.updateGlassType({ ...existing, ...details })
+    await repository.updateGlassType({ ...existing, ...parsed.data })
   } catch (error) {
     if (isUniqueViolation(error)) return DUPLICATE_NAME_ERROR
     throw error
   }
 
-  revalidatePath("/dashboard/products")
+  revalidatePath("/dashboard/products/glass-types")
 
   return { status: "success" }
 }
 
 export async function deleteGlassTypeAction(id: number): Promise<void> {
   await repository.deleteGlassType(glassTypeIdSchema.parse(id))
-  revalidatePath("/dashboard/products")
+  revalidatePath("/dashboard/products/glass-types")
 }
