@@ -47,7 +47,33 @@ function asFieldErrors(messages?: string[]) {
 }
 
 export function WindowTypeFormDialog(props: WindowTypeFormDialogProps) {
-  const { open, onOpenChange, mode } = props
+  const { open, onOpenChange } = props
+
+  // Remount the form (including its useActionState) fresh every time the
+  // dialog opens, so a stale validation error from a previous attempt can't
+  // reappear on reopen, and controlled fields always start from the current
+  // entity instead of whatever was last typed.
+  const [instanceKey, setInstanceKey] = useState(0)
+  const wasOpen = useRef(open)
+
+  if (open && !wasOpen.current) {
+    wasOpen.current = true
+    setInstanceKey((key) => key + 1)
+  } else if (!open && wasOpen.current) {
+    wasOpen.current = false
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <WindowTypeForm key={instanceKey} {...props} />
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+function WindowTypeForm(props: WindowTypeFormDialogProps) {
+  const { onOpenChange, mode } = props
   const action =
     mode === "create"
       ? createWindowTypeAction
@@ -64,20 +90,8 @@ export function WindowTypeFormDialog(props: WindowTypeFormDialogProps) {
     }
   }, [state, onOpenChange])
 
-  // Controlled fields, seeded fresh each time the dialog opens (not on every
-  // render — see the ref-guarded block below), so a failed submit keeps
-  // whatever the user typed instead of the browser's native form reset
-  // wiping it back to blank.
   const windowType = mode === "edit" ? props.windowType : undefined
   const [values, setValues] = useState(() => valuesFor(windowType))
-  const wasOpen = useRef(open)
-
-  if (open && !wasOpen.current) {
-    wasOpen.current = true
-    setValues(valuesFor(windowType))
-  } else if (!open && wasOpen.current) {
-    wasOpen.current = false
-  }
 
   function updateField<Field extends keyof FormValues>(field: Field) {
     return (event: React.ChangeEvent<HTMLInputElement>) =>
@@ -85,60 +99,56 @@ export function WindowTypeFormDialog(props: WindowTypeFormDialogProps) {
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <form action={formAction} className="flex flex-col gap-4">
-          <DialogHeader>
-            <DialogTitle>
-              {mode === "create" ? "Add window type" : "Edit window type"}
-            </DialogTitle>
-            <DialogDescription>
-              {mode === "create"
-                ? "Create a new window type."
-                : "Update this window type's details."}
-            </DialogDescription>
-          </DialogHeader>
-          <FieldGroup>
-            <Field data-invalid={!!state.fieldErrors?.name}>
-              <FieldLabel htmlFor="name">Name</FieldLabel>
-              <Input
-                id="name"
-                name="name"
-                value={values.name}
-                onChange={updateField("name")}
-                aria-invalid={!!state.fieldErrors?.name}
-                required
-              />
-              <FieldError errors={asFieldErrors(state.fieldErrors?.name)} />
-            </Field>
-            <Field data-invalid={!!state.fieldErrors?.laborCost}>
-              <FieldLabel htmlFor="laborCost">Labor cost</FieldLabel>
-              <Input
-                id="laborCost"
-                name="laborCost"
-                inputMode="decimal"
-                placeholder="0.00"
-                value={values.laborCost}
-                onChange={updateField("laborCost")}
-                aria-invalid={!!state.fieldErrors?.laborCost}
-                required
-              />
-              <FieldError errors={asFieldErrors(state.fieldErrors?.laborCost)} />
-            </Field>
-          </FieldGroup>
-          {state.status === "error" && state.message && !state.fieldErrors && (
-            <p className="text-sm text-destructive">{state.message}</p>
-          )}
-          <DialogFooter>
-            <DialogClose render={<Button type="button" variant="outline" />}>
-              Cancel
-            </DialogClose>
-            <Button type="submit" disabled={isPending}>
-              {mode === "create" ? "Add window type" : "Save changes"}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+    <form action={formAction} className="flex flex-col gap-4">
+      <DialogHeader>
+        <DialogTitle>
+          {mode === "create" ? "Add window type" : "Edit window type"}
+        </DialogTitle>
+        <DialogDescription>
+          {mode === "create"
+            ? "Create a new window type."
+            : "Update this window type's details."}
+        </DialogDescription>
+      </DialogHeader>
+      <FieldGroup>
+        <Field data-invalid={!!state.fieldErrors?.name}>
+          <FieldLabel htmlFor="name">Name</FieldLabel>
+          <Input
+            id="name"
+            name="name"
+            value={values.name}
+            onChange={updateField("name")}
+            aria-invalid={!!state.fieldErrors?.name}
+            required
+          />
+          <FieldError errors={asFieldErrors(state.fieldErrors?.name)} />
+        </Field>
+        <Field data-invalid={!!state.fieldErrors?.laborCost}>
+          <FieldLabel htmlFor="laborCost">Labor cost</FieldLabel>
+          <Input
+            id="laborCost"
+            name="laborCost"
+            inputMode="decimal"
+            placeholder="0.00"
+            value={values.laborCost}
+            onChange={updateField("laborCost")}
+            aria-invalid={!!state.fieldErrors?.laborCost}
+            required
+          />
+          <FieldError errors={asFieldErrors(state.fieldErrors?.laborCost)} />
+        </Field>
+      </FieldGroup>
+      {state.status === "error" && state.message && !state.fieldErrors && (
+        <p className="text-sm text-destructive">{state.message}</p>
+      )}
+      <DialogFooter>
+        <DialogClose render={<Button type="button" variant="outline" />}>
+          Cancel
+        </DialogClose>
+        <Button type="submit" disabled={isPending}>
+          {mode === "create" ? "Add window type" : "Save changes"}
+        </Button>
+      </DialogFooter>
+    </form>
   )
 }

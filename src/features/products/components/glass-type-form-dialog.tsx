@@ -47,7 +47,33 @@ function asFieldErrors(messages?: string[]) {
 }
 
 export function GlassTypeFormDialog(props: GlassTypeFormDialogProps) {
-  const { open, onOpenChange, mode } = props
+  const { open, onOpenChange } = props
+
+  // Remount the form (including its useActionState) fresh every time the
+  // dialog opens, so a stale validation error from a previous attempt can't
+  // reappear on reopen, and controlled fields always start from the current
+  // entity instead of whatever was last typed.
+  const [instanceKey, setInstanceKey] = useState(0)
+  const wasOpen = useRef(open)
+
+  if (open && !wasOpen.current) {
+    wasOpen.current = true
+    setInstanceKey((key) => key + 1)
+  } else if (!open && wasOpen.current) {
+    wasOpen.current = false
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <GlassTypeForm key={instanceKey} {...props} />
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+function GlassTypeForm(props: GlassTypeFormDialogProps) {
+  const { onOpenChange, mode } = props
   const action =
     mode === "create"
       ? createGlassTypeAction
@@ -64,20 +90,8 @@ export function GlassTypeFormDialog(props: GlassTypeFormDialogProps) {
     }
   }, [state, onOpenChange])
 
-  // Controlled fields, seeded fresh each time the dialog opens (not on every
-  // render — see the ref-guarded block below), so a failed submit keeps
-  // whatever the user typed instead of the browser's native form reset
-  // wiping it back to blank.
   const glassType = mode === "edit" ? props.glassType : undefined
   const [values, setValues] = useState(() => valuesFor(glassType))
-  const wasOpen = useRef(open)
-
-  if (open && !wasOpen.current) {
-    wasOpen.current = true
-    setValues(valuesFor(glassType))
-  } else if (!open && wasOpen.current) {
-    wasOpen.current = false
-  }
 
   function updateField<Field extends keyof FormValues>(field: Field) {
     return (event: React.ChangeEvent<HTMLInputElement>) =>
@@ -85,62 +99,56 @@ export function GlassTypeFormDialog(props: GlassTypeFormDialogProps) {
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <form action={formAction} className="flex flex-col gap-4">
-          <DialogHeader>
-            <DialogTitle>
-              {mode === "create" ? "Add glass type" : "Edit glass type"}
-            </DialogTitle>
-            <DialogDescription>
-              {mode === "create"
-                ? "Create a new glass type."
-                : "Update this glass type's details."}
-            </DialogDescription>
-          </DialogHeader>
-          <FieldGroup>
-            <Field data-invalid={!!state.fieldErrors?.name}>
-              <FieldLabel htmlFor="name">Name</FieldLabel>
-              <Input
-                id="name"
-                name="name"
-                value={values.name}
-                onChange={updateField("name")}
-                aria-invalid={!!state.fieldErrors?.name}
-                required
-              />
-              <FieldError errors={asFieldErrors(state.fieldErrors?.name)} />
-            </Field>
-            <Field data-invalid={!!state.fieldErrors?.pricePerSqFt}>
-              <FieldLabel htmlFor="pricePerSqFt">Price per sq ft</FieldLabel>
-              <Input
-                id="pricePerSqFt"
-                name="pricePerSqFt"
-                inputMode="decimal"
-                placeholder="0.00"
-                value={values.pricePerSqFt}
-                onChange={updateField("pricePerSqFt")}
-                aria-invalid={!!state.fieldErrors?.pricePerSqFt}
-                required
-              />
-              <FieldError
-                errors={asFieldErrors(state.fieldErrors?.pricePerSqFt)}
-              />
-            </Field>
-          </FieldGroup>
-          {state.status === "error" && state.message && !state.fieldErrors && (
-            <p className="text-sm text-destructive">{state.message}</p>
-          )}
-          <DialogFooter>
-            <DialogClose render={<Button type="button" variant="outline" />}>
-              Cancel
-            </DialogClose>
-            <Button type="submit" disabled={isPending}>
-              {mode === "create" ? "Add glass type" : "Save changes"}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+    <form action={formAction} className="flex flex-col gap-4">
+      <DialogHeader>
+        <DialogTitle>
+          {mode === "create" ? "Add glass type" : "Edit glass type"}
+        </DialogTitle>
+        <DialogDescription>
+          {mode === "create"
+            ? "Create a new glass type."
+            : "Update this glass type's details."}
+        </DialogDescription>
+      </DialogHeader>
+      <FieldGroup>
+        <Field data-invalid={!!state.fieldErrors?.name}>
+          <FieldLabel htmlFor="name">Name</FieldLabel>
+          <Input
+            id="name"
+            name="name"
+            value={values.name}
+            onChange={updateField("name")}
+            aria-invalid={!!state.fieldErrors?.name}
+            required
+          />
+          <FieldError errors={asFieldErrors(state.fieldErrors?.name)} />
+        </Field>
+        <Field data-invalid={!!state.fieldErrors?.pricePerSqFt}>
+          <FieldLabel htmlFor="pricePerSqFt">Price per sq ft</FieldLabel>
+          <Input
+            id="pricePerSqFt"
+            name="pricePerSqFt"
+            inputMode="decimal"
+            placeholder="0.00"
+            value={values.pricePerSqFt}
+            onChange={updateField("pricePerSqFt")}
+            aria-invalid={!!state.fieldErrors?.pricePerSqFt}
+            required
+          />
+          <FieldError errors={asFieldErrors(state.fieldErrors?.pricePerSqFt)} />
+        </Field>
+      </FieldGroup>
+      {state.status === "error" && state.message && !state.fieldErrors && (
+        <p className="text-sm text-destructive">{state.message}</p>
+      )}
+      <DialogFooter>
+        <DialogClose render={<Button type="button" variant="outline" />}>
+          Cancel
+        </DialogClose>
+        <Button type="submit" disabled={isPending}>
+          {mode === "create" ? "Add glass type" : "Save changes"}
+        </Button>
+      </DialogFooter>
+    </form>
   )
 }
