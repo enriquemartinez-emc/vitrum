@@ -40,7 +40,7 @@ const data = {
       items: [
         {
           title: "Quotes",
-          url: "#",
+          url: "/dashboard/quotes",
         },
         {
           title: "Orders",
