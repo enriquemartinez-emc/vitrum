@@ -64,6 +64,47 @@ export type Database = {
         }
         Relationships: []
       }
+      glass_pieces: {
+        Row: {
+          created_at: string
+          glass_type_id: number
+          height_in: number
+          id: number
+          origin: string
+          quantity: number
+          updated_at: string
+          width_in: number
+        }
+        Insert: {
+          created_at?: string
+          glass_type_id: number
+          height_in: number
+          id?: never
+          origin: string
+          quantity: number
+          updated_at?: string
+          width_in: number
+        }
+        Update: {
+          created_at?: string
+          glass_type_id?: number
+          height_in?: number
+          id?: never
+          origin?: string
+          quantity?: number
+          updated_at?: string
+          width_in?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "glass_pieces_glass_type_id_fkey"
+            columns: ["glass_type_id"]
+            isOneToOne: false
+            referencedRelation: "glass_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       glass_types: {
         Row: {
           created_at: string
@@ -87,6 +128,105 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      quote_line_items: {
+        Row: {
+          created_at: string
+          glass_type_id: number
+          height_in: number
+          id: number
+          line_total_cents: number
+          quantity: number
+          quote_id: number
+          unit_price_cents: number
+          width_in: number
+          window_type_id: number
+        }
+        Insert: {
+          created_at?: string
+          glass_type_id: number
+          height_in: number
+          id?: never
+          line_total_cents: number
+          quantity: number
+          quote_id: number
+          unit_price_cents: number
+          width_in: number
+          window_type_id: number
+        }
+        Update: {
+          created_at?: string
+          glass_type_id?: number
+          height_in?: number
+          id?: never
+          line_total_cents?: number
+          quantity?: number
+          quote_id?: number
+          unit_price_cents?: number
+          width_in?: number
+          window_type_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quote_line_items_glass_type_id_fkey"
+            columns: ["glass_type_id"]
+            isOneToOne: false
+            referencedRelation: "glass_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quote_line_items_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quote_line_items_window_type_id_fkey"
+            columns: ["window_type_id"]
+            isOneToOne: false
+            referencedRelation: "window_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quotes: {
+        Row: {
+          approved_at: string | null
+          created_at: string
+          customer_id: number
+          declined_at: string | null
+          id: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          approved_at?: string | null
+          created_at?: string
+          customer_id: number
+          declined_at?: string | null
+          id?: never
+          status: string
+          updated_at?: string
+        }
+        Update: {
+          approved_at?: string | null
+          created_at?: string
+          customer_id?: number
+          declined_at?: string | null
+          id?: never
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quotes_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       window_types: {
         Row: {
