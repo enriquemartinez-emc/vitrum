@@ -190,7 +190,12 @@ function CreateQuoteForm({
             onValueChange={(value) => setCustomerId(value ?? "")}
           >
             <SelectTrigger id="customerId" className="w-full">
-              <SelectValue placeholder="Select a customer" />
+              <SelectValue placeholder="Select a customer">
+                {(value: string | null) => {
+                  const customer = customers.find((c) => String(c.id) === value)
+                  return customer ? fullName(customer) : "Select a customer"
+                }}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               {customers.map((customer) => (
@@ -319,7 +324,11 @@ function LineItemRow({
             onValueChange={(value) => onChange({ windowTypeId: value ?? "" })}
           >
             <SelectTrigger className="w-full">
-              <SelectValue placeholder="Select" />
+              <SelectValue placeholder="Select">
+                {(value: string | null) =>
+                  windowTypes.find((w) => String(w.id) === value)?.name ?? "Select"
+                }
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               {windowTypes.map((windowType) => (
@@ -338,7 +347,11 @@ function LineItemRow({
             onValueChange={(value) => onChange({ glassTypeId: value ?? "", cutPlan: null })}
           >
             <SelectTrigger className="w-full">
-              <SelectValue placeholder="Select" />
+              <SelectValue placeholder="Select">
+                {(value: string | null) =>
+                  glassTypes.find((g) => String(g.id) === value)?.name ?? "Select"
+                }
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               {glassTypes.map((glassType) => (
