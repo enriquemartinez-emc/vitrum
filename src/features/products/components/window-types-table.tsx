@@ -18,23 +18,24 @@ import {
 } from "@/components/ui/table"
 import { TablePagination } from "@/components/table-pagination"
 import { formatMoney } from "@/core/shared/money"
-import { productsHref } from "@/features/products/build-href"
 import { AddWindowTypeButton } from "@/features/products/components/add-window-type-button"
 import { WindowTypeRowActions } from "@/features/products/components/window-type-row-actions"
 import type { WindowTypesPage } from "@/features/products/window-types.repository"
 
+function pageHref(page: number) {
+  return page === 1
+    ? "/dashboard/products/window-types"
+    : `/dashboard/products/window-types?page=${page}`
+}
+
 export function WindowTypesTable({
   windowTypesPage,
-  glassPage,
 }: {
   windowTypesPage: WindowTypesPage
-  glassPage: number
 }) {
   const { windowTypes, page, pageSize, totalCount, totalPages } = windowTypesPage
   const firstRow = totalCount === 0 ? 0 : (page - 1) * pageSize + 1
   const lastRow = Math.min(page * pageSize, totalCount)
-  const buildHref = (targetPage: number) =>
-    productsHref("window-types", targetPage, glassPage)
 
   return (
     <div className="flex flex-col gap-4">
@@ -104,7 +105,7 @@ export function WindowTypesTable({
             <TablePagination
               page={page}
               totalPages={totalPages}
-              buildHref={buildHref}
+              buildHref={pageHref}
             />
           </div>
         </>

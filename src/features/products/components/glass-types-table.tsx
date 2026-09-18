@@ -18,23 +18,24 @@ import {
 } from "@/components/ui/table"
 import { TablePagination } from "@/components/table-pagination"
 import { formatMoney } from "@/core/shared/money"
-import { productsHref } from "@/features/products/build-href"
 import { AddGlassTypeButton } from "@/features/products/components/add-glass-type-button"
 import { GlassTypeRowActions } from "@/features/products/components/glass-type-row-actions"
 import type { GlassTypesPage } from "@/features/products/glass-types.repository"
 
+function pageHref(page: number) {
+  return page === 1
+    ? "/dashboard/products/glass-types"
+    : `/dashboard/products/glass-types?page=${page}`
+}
+
 export function GlassTypesTable({
   glassTypesPage,
-  windowPage,
 }: {
   glassTypesPage: GlassTypesPage
-  windowPage: number
 }) {
   const { glassTypes, page, pageSize, totalCount, totalPages } = glassTypesPage
   const firstRow = totalCount === 0 ? 0 : (page - 1) * pageSize + 1
   const lastRow = Math.min(page * pageSize, totalCount)
-  const buildHref = (targetPage: number) =>
-    productsHref("glass-types", windowPage, targetPage)
 
   return (
     <div className="flex flex-col gap-4">
@@ -106,7 +107,7 @@ export function GlassTypesTable({
             <TablePagination
               page={page}
               totalPages={totalPages}
-              buildHref={buildHref}
+              buildHref={pageHref}
             />
           </div>
         </>
