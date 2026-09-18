@@ -14,7 +14,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { FileTextIcon, ShoppingCartIcon, CameraIcon, Settings2Icon, PackageIcon, CommandIcon, LayoutDashboardIcon } from "lucide-react"
+import { FileTextIcon, ShoppingCartIcon, CameraIcon, Settings2Icon, PackageIcon, TagIcon, CommandIcon, LayoutDashboardIcon } from "lucide-react"
 
 const data = {
   user: {
@@ -53,6 +53,23 @@ const data = {
       ],
     },
     {
+      title: "Products",
+      icon: (
+        <TagIcon
+        />
+      ),
+      items: [
+        {
+          title: "Window Types",
+          url: "/dashboard/products/window-types",
+        },
+        {
+          title: "Glass Types",
+          url: "/dashboard/products/glass-types",
+        },
+      ],
+    },
+    {
       title: "Inventory",
       icon: (
         <PackageIcon
@@ -61,10 +78,6 @@ const data = {
       items: [
         {
           title: "Register Shipment",
-          url: "#",
-        },
-        {
-          title: "Products",
           url: "#",
         },
       ],

@@ -9,15 +9,6 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty"
 import {
-  Pagination,
-  PaginationContent,
-  PaginationEllipsis,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination"
-import {
   Table,
   TableBody,
   TableCell,
@@ -25,25 +16,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { TablePagination } from "@/components/table-pagination"
 import { fullName } from "@/core/customers/customer.rules"
 import { AddCustomerButton } from "@/features/customers/components/add-customer-button"
 import { CustomerRowActions } from "@/features/customers/components/customer-row-actions"
 import type { CustomersPage } from "@/features/customers/repository"
-
-function getPageItems(current: number, total: number): (number | "ellipsis")[] {
-  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1)
-
-  const items: (number | "ellipsis")[] = [1]
-  const start = Math.max(2, current - 1)
-  const end = Math.min(total - 1, current + 1)
-
-  if (start > 2) items.push("ellipsis")
-  for (let page = start; page <= end; page++) items.push(page)
-  if (end < total - 1) items.push("ellipsis")
-  items.push(total)
-
-  return items
-}
 
 function pageHref(page: number) {
   return page === 1
@@ -129,48 +106,11 @@ export function CustomersTable({
             <div className="text-sm text-muted-foreground">
               Showing {firstRow}–{lastRow} of {totalCount}
             </div>
-            {totalPages > 1 && (
-              <Pagination className="mx-0 w-fit">
-                <PaginationContent>
-                  <PaginationItem>
-                    <PaginationPrevious
-                      href={pageHref(Math.max(1, page - 1))}
-                      aria-disabled={page <= 1}
-                      className={
-                        page <= 1 ? "pointer-events-none opacity-50" : undefined
-                      }
-                    />
-                  </PaginationItem>
-                  {getPageItems(page, totalPages).map((item, index) =>
-                    item === "ellipsis" ? (
-                      <PaginationItem key={`ellipsis-${index}`}>
-                        <PaginationEllipsis />
-                      </PaginationItem>
-                    ) : (
-                      <PaginationItem key={item}>
-                        <PaginationLink
-                          href={pageHref(item)}
-                          isActive={item === page}
-                        >
-                          {item}
-                        </PaginationLink>
-                      </PaginationItem>
-                    )
-                  )}
-                  <PaginationItem>
-                    <PaginationNext
-                      href={pageHref(Math.min(totalPages, page + 1))}
-                      aria-disabled={page >= totalPages}
-                      className={
-                        page >= totalPages
-                          ? "pointer-events-none opacity-50"
-                          : undefined
-                      }
-                    />
-                  </PaginationItem>
-                </PaginationContent>
-              </Pagination>
-            )}
+            <TablePagination
+              page={page}
+              totalPages={totalPages}
+              buildHref={pageHref}
+            />
           </div>
         </>
       )}

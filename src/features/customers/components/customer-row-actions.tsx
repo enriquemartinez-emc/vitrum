@@ -3,16 +3,7 @@
 import { useState } from "react"
 import { MoreHorizontalIcon } from "lucide-react"
 
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -28,21 +19,6 @@ import { CustomerFormDialog } from "@/features/customers/components/customer-for
 export function CustomerRowActions({ customer }: { customer: Customer }) {
   const [editOpen, setEditOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
-  const [isDeleting, setIsDeleting] = useState(false)
-  const [deleteError, setDeleteError] = useState<string | null>(null)
-
-  async function handleDelete() {
-    setIsDeleting(true)
-    setDeleteError(null)
-    try {
-      await deleteCustomerAction(customer.id)
-      setDeleteOpen(false)
-    } catch {
-      setDeleteError("Couldn't delete this customer. Please try again.")
-    } finally {
-      setIsDeleting(false)
-    }
-  }
 
   return (
     <>
@@ -73,39 +49,14 @@ export function CustomerRowActions({ customer }: { customer: Customer }) {
         onOpenChange={setEditOpen}
       />
 
-      <AlertDialog
+      <DeleteConfirmDialog
         open={deleteOpen}
-        onOpenChange={(nextOpen) => {
-          setDeleteOpen(nextOpen)
-          if (!nextOpen) setDeleteError(null)
-        }}
-      >
-        <AlertDialogContent size="sm">
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete customer?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently delete {fullName(customer)}. This cannot
-              be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          {deleteError && (
-            <p className="text-sm text-destructive">{deleteError}</p>
-          )}
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              variant="destructive"
-              disabled={isDeleting}
-              onClick={(event) => {
-                event.preventDefault()
-                void handleDelete()
-              }}
-            >
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        onOpenChange={setDeleteOpen}
+        title="Delete customer?"
+        description={`This will permanently delete ${fullName(customer)}. This cannot be undone.`}
+        errorMessage="Couldn't delete this customer. Please try again."
+        onConfirm={() => deleteCustomerAction(customer.id)}
+      />
     </>
   )
 }
