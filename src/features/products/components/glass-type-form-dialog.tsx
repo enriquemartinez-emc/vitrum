@@ -30,6 +30,18 @@ type GlassTypeFormDialogProps = {
   onOpenChange: (open: boolean) => void
 } & ({ mode: "create" } | { mode: "edit"; glassType: GlassType })
 
+type FormValues = {
+  name: string
+  pricePerSqFt: string
+}
+
+function valuesFor(glassType: GlassType | undefined): FormValues {
+  return {
+    name: glassType?.name ?? "",
+    pricePerSqFt: glassType ? toDollarsInput(glassType.pricePerSqFt) : "",
+  }
+}
+
 function asFieldErrors(messages?: string[]) {
   return messages?.map((message) => ({ message }))
 }
@@ -52,25 +64,30 @@ export function GlassTypeFormDialog(props: GlassTypeFormDialogProps) {
     }
   }, [state, onOpenChange])
 
-  const initialGlassType = mode === "edit" ? props.glassType : undefined
-  const [glassType, setGlassType] = useState(initialGlassType)
+  // Controlled fields, seeded fresh each time the dialog opens (not on every
+  // render — see the ref-guarded block below), so a failed submit keeps
+  // whatever the user typed instead of the browser's native form reset
+  // wiping it back to blank.
+  const glassType = mode === "edit" ? props.glassType : undefined
+  const [values, setValues] = useState(() => valuesFor(glassType))
   const wasOpen = useRef(open)
 
   if (open && !wasOpen.current) {
     wasOpen.current = true
-    if (glassType !== initialGlassType) setGlassType(initialGlassType)
+    setValues(valuesFor(glassType))
   } else if (!open && wasOpen.current) {
     wasOpen.current = false
+  }
+
+  function updateField<Field extends keyof FormValues>(field: Field) {
+    return (event: React.ChangeEvent<HTMLInputElement>) =>
+      setValues((prev) => ({ ...prev, [field]: event.target.value }))
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
-        <form
-          action={formAction}
-          key={glassType?.id ?? "new"}
-          className="flex flex-col gap-4"
-        >
+        <form action={formAction} className="flex flex-col gap-4">
           <DialogHeader>
             <DialogTitle>
               {mode === "create" ? "Add glass type" : "Edit glass type"}
@@ -87,7 +104,8 @@ export function GlassTypeFormDialog(props: GlassTypeFormDialogProps) {
               <Input
                 id="name"
                 name="name"
-                defaultValue={glassType?.name}
+                value={values.name}
+                onChange={updateField("name")}
                 aria-invalid={!!state.fieldErrors?.name}
                 required
               />
@@ -100,9 +118,8 @@ export function GlassTypeFormDialog(props: GlassTypeFormDialogProps) {
                 name="pricePerSqFt"
                 inputMode="decimal"
                 placeholder="0.00"
-                defaultValue={
-                  glassType ? toDollarsInput(glassType.pricePerSqFt) : ""
-                }
+                value={values.pricePerSqFt}
+                onChange={updateField("pricePerSqFt")}
                 aria-invalid={!!state.fieldErrors?.pricePerSqFt}
                 required
               />

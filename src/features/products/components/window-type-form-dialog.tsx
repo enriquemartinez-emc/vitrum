@@ -30,6 +30,18 @@ type WindowTypeFormDialogProps = {
   onOpenChange: (open: boolean) => void
 } & ({ mode: "create" } | { mode: "edit"; windowType: WindowType })
 
+type FormValues = {
+  name: string
+  laborCost: string
+}
+
+function valuesFor(windowType: WindowType | undefined): FormValues {
+  return {
+    name: windowType?.name ?? "",
+    laborCost: windowType ? toDollarsInput(windowType.laborCost) : "",
+  }
+}
+
 function asFieldErrors(messages?: string[]) {
   return messages?.map((message) => ({ message }))
 }
@@ -52,25 +64,30 @@ export function WindowTypeFormDialog(props: WindowTypeFormDialogProps) {
     }
   }, [state, onOpenChange])
 
-  const initialWindowType = mode === "edit" ? props.windowType : undefined
-  const [windowType, setWindowType] = useState(initialWindowType)
+  // Controlled fields, seeded fresh each time the dialog opens (not on every
+  // render — see the ref-guarded block below), so a failed submit keeps
+  // whatever the user typed instead of the browser's native form reset
+  // wiping it back to blank.
+  const windowType = mode === "edit" ? props.windowType : undefined
+  const [values, setValues] = useState(() => valuesFor(windowType))
   const wasOpen = useRef(open)
 
   if (open && !wasOpen.current) {
     wasOpen.current = true
-    if (windowType !== initialWindowType) setWindowType(initialWindowType)
+    setValues(valuesFor(windowType))
   } else if (!open && wasOpen.current) {
     wasOpen.current = false
+  }
+
+  function updateField<Field extends keyof FormValues>(field: Field) {
+    return (event: React.ChangeEvent<HTMLInputElement>) =>
+      setValues((prev) => ({ ...prev, [field]: event.target.value }))
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
-        <form
-          action={formAction}
-          key={windowType?.id ?? "new"}
-          className="flex flex-col gap-4"
-        >
+        <form action={formAction} className="flex flex-col gap-4">
           <DialogHeader>
             <DialogTitle>
               {mode === "create" ? "Add window type" : "Edit window type"}
@@ -87,7 +104,8 @@ export function WindowTypeFormDialog(props: WindowTypeFormDialogProps) {
               <Input
                 id="name"
                 name="name"
-                defaultValue={windowType?.name}
+                value={values.name}
+                onChange={updateField("name")}
                 aria-invalid={!!state.fieldErrors?.name}
                 required
               />
@@ -100,9 +118,8 @@ export function WindowTypeFormDialog(props: WindowTypeFormDialogProps) {
                 name="laborCost"
                 inputMode="decimal"
                 placeholder="0.00"
-                defaultValue={
-                  windowType ? toDollarsInput(windowType.laborCost) : ""
-                }
+                value={values.laborCost}
+                onChange={updateField("laborCost")}
                 aria-invalid={!!state.fieldErrors?.laborCost}
                 required
               />
