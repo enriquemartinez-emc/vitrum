@@ -2,10 +2,13 @@
 
 import { useEffect, useState, useTransition } from "react"
 
+import { XIcon } from "lucide-react"
+
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
   Drawer,
+  DrawerClose,
   DrawerContent,
   DrawerDescription,
   DrawerFooter,
@@ -87,10 +90,18 @@ export function QuoteDetailDrawer({
     <Drawer open={open} onOpenChange={onOpenChange} swipeDirection="right">
       <DrawerContent className="[--drawer-content-width:100dvw]! sm:[--drawer-content-width:28rem]!">
         <DrawerHeader>
-          <DrawerTitle>Quote details</DrawerTitle>
-          <DrawerDescription>
-            {detail ? detail.customerName : "Loading quote…"}
-          </DrawerDescription>
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex flex-col gap-0.5">
+              <DrawerTitle>Quote details</DrawerTitle>
+              <DrawerDescription>
+                {detail ? detail.customerName : "Loading quote…"}
+              </DrawerDescription>
+            </div>
+            <DrawerClose render={<Button variant="ghost" size="icon" className="shrink-0" />}>
+              <XIcon />
+              <span className="sr-only">Close</span>
+            </DrawerClose>
+          </div>
         </DrawerHeader>
 
         <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 py-4">
