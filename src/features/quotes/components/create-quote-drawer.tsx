@@ -1,7 +1,7 @@
 "use client"
 
 import { useActionState, useEffect, useRef, useState } from "react"
-import { AlertTriangleIcon, ChevronDownIcon, CircleCheckIcon, PlusIcon, XIcon } from "lucide-react"
+import { AlertTriangleIcon, CircleCheckIcon, PlusIcon, XIcon } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -286,7 +286,6 @@ function LineItemRow({
 }) {
   const price = parsePreviewPrice(item, windowTypes, glassTypes)
   const glassTypeName = glassTypes.find((g) => String(g.id) === item.glassTypeId)?.name
-  const [detailsOpen, setDetailsOpen] = useState(false)
 
   // Deps are the primitive fields, not `item`/`onCheckAvailability` — both
   // are new references on every parent render, which would reset this
@@ -401,11 +400,7 @@ function LineItemRow({
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <AvailabilityStatus
-          item={item}
-          detailsOpen={detailsOpen}
-          onToggleDetails={() => setDetailsOpen((open) => !open)}
-        />
+        <AvailabilityStatus item={item} />
         {price && (
           <span className="text-sm text-muted-foreground">
             {formatMoney(price.unitPrice)} / unit · {formatMoney(price.lineTotal)} total
@@ -413,22 +408,14 @@ function LineItemRow({
         )}
       </div>
 
-      {detailsOpen && item.cutPlan && glassTypeName && (
+      {item.cutPlan && glassTypeName && (
         <CutPlanPreview plan={item.cutPlan} glassTypeName={glassTypeName} />
       )}
     </div>
   )
 }
 
-function AvailabilityStatus({
-  item,
-  detailsOpen,
-  onToggleDetails,
-}: {
-  item: DraftLineItem
-  detailsOpen: boolean
-  onToggleDetails: () => void
-}) {
+function AvailabilityStatus({ item }: { item: DraftLineItem }) {
   if (item.isChecking) {
     return (
       <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
@@ -448,23 +435,14 @@ function AvailabilityStatus({
   const isFulfilled = plan.status === "fulfilled"
 
   return (
-    <button
-      type="button"
-      onClick={onToggleDetails}
-      className="flex items-center gap-1.5"
-    >
-      <Badge variant={isFulfilled ? "secondary" : "destructive"}>
-        {isFulfilled ? (
-          <CircleCheckIcon data-icon="inline-start" />
-        ) : (
-          <AlertTriangleIcon data-icon="inline-start" />
-        )}
-        {isFulfilled ? "In stock" : `Short ${plan.unfulfilledQuantity}`}
-      </Badge>
-      <ChevronDownIcon
-        className={`size-3.5 text-muted-foreground transition-transform ${detailsOpen ? "rotate-180" : ""}`}
-      />
-    </button>
+    <Badge variant={isFulfilled ? "secondary" : "destructive"}>
+      {isFulfilled ? (
+        <CircleCheckIcon data-icon="inline-start" />
+      ) : (
+        <AlertTriangleIcon data-icon="inline-start" />
+      )}
+      {isFulfilled ? "In stock" : `Short ${plan.unfulfilledQuantity}`}
+    </Badge>
   )
 }
 
