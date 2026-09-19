@@ -28,6 +28,7 @@ import type { WindowType } from "@/core/products/window-type.types"
 import { formatMoney } from "@/core/shared/money"
 import { CreateQuoteDrawer } from "@/features/quotes/components/create-quote-drawer"
 import { QuoteDetailDrawer } from "@/features/quotes/components/quote-detail-drawer"
+import { QuoteRowActions } from "@/features/quotes/components/quote-row-actions"
 import type { QuoteSummary, QuotesPage } from "@/features/quotes/repository"
 
 const STATUS_LABEL: Record<QuoteSummary["status"], string> = {
@@ -123,13 +124,9 @@ export function QuotesTable({
                     </TableCell>
                     <TableCell>{formatMoney(quote.total)}</TableCell>
                     <TableCell>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setDetailQuoteId(quote.id)}
-                      >
-                        View
-                      </Button>
+                      <QuoteRowActions
+                        onView={() => setDetailQuoteId(quote.id)}
+                      />
                     </TableCell>
                   </TableRow>
                 ))}
