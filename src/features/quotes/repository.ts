@@ -182,7 +182,10 @@ export type QuoteDetail = {
   createdAt: string
   lineItems: QuoteDetailLineItem[]
   total: Money
+  order: { id: number; status: string; installationDate: string } | null
 }
+
+type QuoteOrderRow = Database["public"]["Tables"]["orders"]["Row"]
 
 type QuoteDetailRow = QuoteRow & {
   customers: Pick<CustomerRow, "first_name" | "last_name"> | null
@@ -190,13 +193,14 @@ type QuoteDetailRow = QuoteRow & {
     window_types: Pick<WindowTypeRow, "name"> | null
     glass_types: Pick<GlassTypeRow, "name"> | null
   })[]
+  orders: Pick<QuoteOrderRow, "id" | "status" | "installation_date"> | null
 }
 
 export async function getQuoteDetail(id: QuoteId): Promise<QuoteDetail | null> {
   const { data: row, error } = await getDb()
     .from("quotes")
     .select(
-      "*, customers(first_name,last_name), quote_line_items(*, window_types(name), glass_types(name))"
+      "*, customers(first_name,last_name), quote_line_items(*, window_types(name), glass_types(name)), orders(id, status, installation_date)"
     )
     .eq("id", id)
     .maybeSingle<QuoteDetailRow>()
@@ -228,6 +232,13 @@ export async function getQuoteDetail(id: QuoteId): Promise<QuoteDetail | null> {
     total: moneySchema.parse(
       lineItems.reduce((sum, lineItem) => sum + lineItem.lineTotal, 0)
     ),
+    order: row.orders
+      ? {
+          id: row.orders.id,
+          status: row.orders.status,
+          installationDate: row.orders.installation_date,
+        }
+      : null,
   }
 }
 
