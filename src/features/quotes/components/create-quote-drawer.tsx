@@ -25,7 +25,6 @@ import {
 import { Spinner } from "@/components/ui/spinner"
 import type { CutPlan } from "@/core/inventory/cut-plan.types"
 import type { Customer } from "@/core/customers/customer.types"
-import { fullName } from "@/core/customers/customer.rules"
 import type { GlassType } from "@/core/products/glass-type.types"
 import type { WindowType } from "@/core/products/window-type.types"
 import { priceLineItem } from "@/core/quotes/quote.rules"
@@ -34,6 +33,7 @@ import { formatMoney } from "@/core/shared/money"
 import { quantitySchema } from "@/core/shared/quantity"
 import { previewCutPlanAction } from "@/features/inventory/actions"
 import { createQuoteAction } from "@/features/quotes/actions"
+import { CustomerCombobox } from "@/features/quotes/components/customer-combobox"
 import { initialQuoteFormState, type QuoteFormState } from "@/features/quotes/form-state"
 
 type CreateQuoteDrawerProps = {
@@ -110,7 +110,8 @@ function CreateQuoteForm({
     if (state.status === "success") onOpenChange(false)
   }, [state, onOpenChange])
 
-  const [customerId, setCustomerId] = useState("")
+  const [customerList, setCustomerList] = useState(customers)
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
   const [lineItems, setLineItems] = useState<DraftLineItem[]>(() => [
     emptyLineItem(crypto.randomUUID()),
   ])
@@ -179,32 +180,24 @@ function CreateQuoteForm({
         </DrawerDescription>
       </DrawerHeader>
 
+      <input
+        type="hidden"
+        name="customerId"
+        value={selectedCustomer?.id ?? ""}
+      />
       <input type="hidden" name="lineItems" value={serializedLineItems} />
 
       <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto px-4 py-4">
         <Field>
-          <FieldLabel htmlFor="customerId">Customer</FieldLabel>
-          <Select
-            name="customerId"
-            value={customerId}
-            onValueChange={(value) => setCustomerId(value ?? "")}
-          >
-            <SelectTrigger id="customerId" className="w-full">
-              <SelectValue placeholder="Select a customer">
-                {(value: string | null) => {
-                  const customer = customers.find((c) => String(c.id) === value)
-                  return customer ? fullName(customer) : "Select a customer"
-                }}
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              {customers.map((customer) => (
-                <SelectItem key={customer.id} value={String(customer.id)}>
-                  {fullName(customer)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <FieldLabel>Customer</FieldLabel>
+          <CustomerCombobox
+            customers={customerList}
+            value={selectedCustomer}
+            onValueChange={setSelectedCustomer}
+            onCustomerCreated={(customer) =>
+              setCustomerList((prev) => [...prev, customer])
+            }
+          />
         </Field>
 
         <div className="flex flex-col gap-4">
