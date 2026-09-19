@@ -37,10 +37,10 @@ export async function createCustomerAction(
     }
   }
 
-  await repository.insertCustomer(parsed.data)
+  const customer = await repository.insertCustomer(parsed.data)
   revalidatePath("/dashboard/customers")
 
-  return { status: "success" }
+  return { status: "success", customer }
 }
 
 export async function updateCustomerAction(

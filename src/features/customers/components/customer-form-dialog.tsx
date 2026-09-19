@@ -29,6 +29,7 @@ import {
 type CustomerFormDialogProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
+  onCreated?: (customer: Customer) => void
 } & ({ mode: "create" } | { mode: "edit"; customer: Customer })
 
 type FormValues = {
@@ -78,7 +79,7 @@ export function CustomerFormDialog(props: CustomerFormDialogProps) {
 }
 
 function CustomerForm(props: CustomerFormDialogProps) {
-  const { onOpenChange, mode } = props
+  const { onOpenChange, onCreated, mode } = props
   const action =
     mode === "create"
       ? createCustomerAction
@@ -91,9 +92,10 @@ function CustomerForm(props: CustomerFormDialogProps) {
 
   useEffect(() => {
     if (state.status === "success") {
+      if (state.customer) onCreated?.(state.customer)
       onOpenChange(false)
     }
-  }, [state, onOpenChange])
+  }, [state, onOpenChange, onCreated])
 
   const customer = mode === "edit" ? props.customer : undefined
   const [values, setValues] = useState(() => valuesFor(customer))
