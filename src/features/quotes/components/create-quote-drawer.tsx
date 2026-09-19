@@ -24,7 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Spinner } from "@/components/ui/spinner"
-import type { CutPlan } from "@/core/inventory/cut-plan.types"
+import type { CutAllocation, CutPlan } from "@/core/inventory/cut-plan.types"
 import type { Customer } from "@/core/customers/customer.types"
 import type { GlassType } from "@/core/products/glass-type.types"
 import type { WindowType } from "@/core/products/window-type.types"
@@ -448,17 +448,20 @@ function AvailabilityStatus({ item }: { item: DraftLineItem }) {
 
 function CutPlanPreview({ plan, glassTypeName }: { plan: CutPlan; glassTypeName: string }) {
   return (
-    <div className="flex flex-col gap-1 rounded-md bg-muted/50 p-2 text-xs text-muted-foreground">
+    <div className="flex flex-col gap-3 rounded-md bg-muted/50 p-2 text-xs text-muted-foreground">
       {plan.allocations.map((allocation, index) => (
-        <p key={index}>
-          Cut {allocation.quantityToCut} from a {allocation.piece.widthIn}×
-          {allocation.piece.heightIn}in {allocation.piece.origin} piece
-          {allocation.offcuts.length > 0
-            ? ` — leaves ${allocation.offcuts
-                .map((offcut) => `${offcut.widthIn}×${offcut.heightIn}in`)
-                .join(" + ")} offcut${allocation.offcuts.length > 1 ? "s" : ""}`
-            : " — exact fit, no offcut"}
-        </p>
+        <div key={index} className="flex items-start gap-3">
+          <CutDiagram allocation={allocation} />
+          <p>
+            Cut {allocation.quantityToCut} from a {allocation.piece.widthIn}×
+            {allocation.piece.heightIn}in {allocation.piece.origin} piece
+            {allocation.offcuts.length > 0
+              ? ` — leaves ${allocation.offcuts
+                  .map((offcut) => `${offcut.widthIn}×${offcut.heightIn}in`)
+                  .join(" + ")} offcut${allocation.offcuts.length > 1 ? "s" : ""}`
+              : " — exact fit, no offcut"}
+          </p>
+        </div>
       ))}
       {plan.status === "partial" && (
         <p className="text-destructive">
@@ -467,5 +470,45 @@ function CutPlanPreview({ plan, glassTypeName }: { plan: CutPlan; glassTypeName:
         </p>
       )}
     </div>
+  )
+}
+
+function CutDiagram({ allocation }: { allocation: CutAllocation }) {
+  const { piece, cut, offcuts } = allocation
+  const height = piece.heightIn
+
+  function flipY(y: number, rectHeight: number) {
+    return height - y - rectHeight
+  }
+
+  return (
+    <svg
+      viewBox={`0 0 ${piece.widthIn} ${height}`}
+      preserveAspectRatio="xMidYMid meet"
+      aria-hidden="true"
+      className="h-16 w-20 shrink-0"
+    >
+      <rect
+        x={cut.x}
+        y={flipY(cut.y, cut.heightIn)}
+        width={cut.widthIn}
+        height={cut.heightIn}
+        strokeWidth={1.5}
+        vectorEffect="non-scaling-stroke"
+        className="fill-primary/20 stroke-primary"
+      />
+      {offcuts.map((offcut, index) => (
+        <rect
+          key={index}
+          x={offcut.x}
+          y={flipY(offcut.y, offcut.heightIn)}
+          width={offcut.widthIn}
+          height={offcut.heightIn}
+          strokeWidth={1}
+          vectorEffect="non-scaling-stroke"
+          className="fill-muted stroke-border"
+        />
+      ))}
+    </svg>
   )
 }
