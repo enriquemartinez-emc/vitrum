@@ -74,9 +74,6 @@ function emptyLineItem(key: string): DraftLineItem {
 export function CreateQuoteDrawer(props: CreateQuoteDrawerProps) {
   const { open, onOpenChange } = props
 
-  // Same remount-on-reopen pattern used by the entity dialogs: a fresh key
-  // resets all local state (including useActionState) every time the
-  // drawer opens, so a previous attempt's errors/drafts never resurface.
   const [instanceKey, setInstanceKey] = useState(0)
   const wasOpen = useRef(open)
 
@@ -89,9 +86,6 @@ export function CreateQuoteDrawer(props: CreateQuoteDrawerProps) {
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange} swipeDirection="right">
-      {/* Full-screen on mobile, a comfortable side panel from sm: up. The `!`
-          forces these over the component's own sm: default regardless of
-          Tailwind's utility generation order. */}
       <DrawerContent className="[--drawer-content-width:100dvw]! sm:[--drawer-content-width:30rem]!">
         <CreateQuoteForm key={instanceKey} {...props} />
       </DrawerContent>
@@ -294,12 +288,9 @@ function LineItemRow({
   const glassTypeName = glassTypes.find((g) => String(g.id) === item.glassTypeId)?.name
   const [detailsOpen, setDetailsOpen] = useState(false)
 
-  // Automatically check availability shortly after the user stops changing
-  // glass type, dimensions, or quantity — no button to click. The effect
-  // deliberately watches only these primitive values (not `item` or
-  // `onCheckAvailability`, both of which are new references on every parent
-  // render) so unrelated re-renders — e.g. typing in a different line item —
-  // don't reset this row's debounce timer.
+  // Deps are the primitive fields, not `item`/`onCheckAvailability` — both
+  // are new references on every parent render, which would reset this
+  // debounce whenever an unrelated line item changes.
   useEffect(() => {
     if (!canCheckAvailability(item)) return
 
