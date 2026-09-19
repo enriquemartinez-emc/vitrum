@@ -52,10 +52,19 @@ export function QuoteDetailDrawer({
       return
     }
 
+    let cancelled = false
     setIsLoading(true)
     getQuoteDetailAction(quoteId)
-      .then(setDetail)
-      .finally(() => setIsLoading(false))
+      .then((result) => {
+        if (!cancelled) setDetail(result)
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoading(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
   }, [open, quoteId])
 
   function handleApprove() {
