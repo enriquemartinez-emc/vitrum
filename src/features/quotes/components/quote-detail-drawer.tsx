@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/drawer"
 import { Spinner } from "@/components/ui/spinner"
 import { formatMoney } from "@/core/shared/money"
+import { CreateOrderDialog } from "@/features/orders/components/create-order-dialog"
 import {
   approveQuoteAction,
   declineQuoteAction,
@@ -48,6 +49,7 @@ export function QuoteDetailDrawer({
   const [detail, setDetail] = useState<QuoteDetail | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [isPending, startTransition] = useTransition()
+  const [createOrderOpen, setCreateOrderOpen] = useState(false)
 
   useEffect(() => {
     if (!open || quoteId === null) {
@@ -138,6 +140,14 @@ export function QuoteDetailDrawer({
                   </div>
                 ))}
               </div>
+
+              {detail.order && (
+                <p className="text-sm text-muted-foreground">
+                  {detail.order.status === "complete"
+                    ? "Order installed and complete."
+                    : `Order scheduled for ${detail.order.installationDate}.`}
+                </p>
+              )}
             </>
           )}
         </div>
@@ -156,7 +166,24 @@ export function QuoteDetailDrawer({
             </Button>
           </DrawerFooter>
         )}
+
+        {detail?.status === "approved" && !detail.order && (
+          <DrawerFooter>
+            <Button onClick={() => setCreateOrderOpen(true)}>Create order</Button>
+          </DrawerFooter>
+        )}
       </DrawerContent>
+
+      {detail && (
+        <CreateOrderDialog
+          quoteId={detail.id}
+          open={createOrderOpen}
+          onOpenChange={setCreateOrderOpen}
+          onCreated={() => {
+            getQuoteDetailAction(detail.id).then(setDetail)
+          }}
+        />
+      )}
     </Drawer>
   )
 }
