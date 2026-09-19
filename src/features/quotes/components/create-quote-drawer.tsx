@@ -88,7 +88,10 @@ export function CreateQuoteDrawer(props: CreateQuoteDrawerProps) {
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange} swipeDirection="right">
-      <DrawerContent style={{ "--drawer-content-width": "34rem" } as React.CSSProperties}>
+      {/* Full-screen on mobile, a comfortable side panel from sm: up. The `!`
+          forces these over the component's own sm: default regardless of
+          Tailwind's utility generation order. */}
+      <DrawerContent className="[--drawer-content-width:100dvw]! sm:[--drawer-content-width:30rem]!">
         <CreateQuoteForm key={instanceKey} {...props} />
       </DrawerContent>
     </Drawer>
@@ -309,7 +312,7 @@ function LineItemRow({
         )}
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Field>
           <FieldLabel>Window type</FieldLabel>
           <Select
@@ -357,7 +360,7 @@ function LineItemRow({
         </Field>
       </div>
 
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <Field>
           <FieldLabel>Width (in)</FieldLabel>
           <Input
@@ -390,7 +393,7 @@ function LineItemRow({
         </Field>
       </div>
 
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <Button
           type="button"
           variant="outline"

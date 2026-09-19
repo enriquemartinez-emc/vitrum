@@ -85,7 +85,7 @@ export function QuoteDetailDrawer({
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange} swipeDirection="right">
-      <DrawerContent style={{ "--drawer-content-width": "30rem" } as React.CSSProperties}>
+      <DrawerContent className="[--drawer-content-width:100dvw]! sm:[--drawer-content-width:28rem]!">
         <DrawerHeader>
           <DrawerTitle>Quote details</DrawerTitle>
           <DrawerDescription>
