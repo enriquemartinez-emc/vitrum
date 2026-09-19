@@ -1,8 +1,9 @@
 "use client"
 
 import { useActionState, useEffect, useRef, useState } from "react"
-import { PlusIcon, XIcon } from "lucide-react"
+import { AlertTriangleIcon, ChevronDownIcon, CircleCheckIcon, PlusIcon, XIcon } from "lucide-react"
 
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
   Drawer,
@@ -154,7 +155,7 @@ function CreateQuoteForm({
     } catch {
       updateLineItem(item.key, {
         isChecking: false,
-        checkError: "Enter a valid glass type, dimensions, and quantity first.",
+        checkError: "Couldn't check glass availability. Try again in a moment.",
       })
     }
   }
@@ -291,6 +292,21 @@ function LineItemRow({
 }) {
   const price = parsePreviewPrice(item, windowTypes, glassTypes)
   const glassTypeName = glassTypes.find((g) => String(g.id) === item.glassTypeId)?.name
+  const [detailsOpen, setDetailsOpen] = useState(false)
+
+  // Automatically check availability shortly after the user stops changing
+  // glass type, dimensions, or quantity — no button to click. The effect
+  // deliberately watches only these primitive values (not `item` or
+  // `onCheckAvailability`, both of which are new references on every parent
+  // render) so unrelated re-renders — e.g. typing in a different line item —
+  // don't reset this row's debounce timer.
+  useEffect(() => {
+    if (!canCheckAvailability(item)) return
+
+    const timeout = setTimeout(onCheckAvailability, 450)
+    return () => clearTimeout(timeout)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [item.glassTypeId, item.widthIn, item.heightIn, item.quantity])
 
   return (
     <div className="flex flex-col gap-3 rounded-lg border p-3">
@@ -394,16 +410,11 @@ function LineItemRow({
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          disabled={!canCheckAvailability(item) || item.isChecking}
-          onClick={onCheckAvailability}
-        >
-          {item.isChecking && <Spinner data-icon="inline-start" />}
-          Check glass availability
-        </Button>
+        <AvailabilityStatus
+          item={item}
+          detailsOpen={detailsOpen}
+          onToggleDetails={() => setDetailsOpen((open) => !open)}
+        />
         {price && (
           <span className="text-sm text-muted-foreground">
             {formatMoney(price.unitPrice)} / unit · {formatMoney(price.lineTotal)} total
@@ -411,13 +422,58 @@ function LineItemRow({
         )}
       </div>
 
-      {item.checkError && (
-        <p className="text-sm text-destructive">{item.checkError}</p>
-      )}
-      {item.cutPlan && glassTypeName && (
+      {detailsOpen && item.cutPlan && glassTypeName && (
         <CutPlanPreview plan={item.cutPlan} glassTypeName={glassTypeName} />
       )}
     </div>
+  )
+}
+
+function AvailabilityStatus({
+  item,
+  detailsOpen,
+  onToggleDetails,
+}: {
+  item: DraftLineItem
+  detailsOpen: boolean
+  onToggleDetails: () => void
+}) {
+  if (item.isChecking) {
+    return (
+      <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
+        <Spinner className="size-3.5" />
+        Checking stock…
+      </span>
+    )
+  }
+
+  if (item.checkError) {
+    return <span className="text-sm text-destructive">{item.checkError}</span>
+  }
+
+  const plan = item.cutPlan
+  if (!plan) return null
+
+  const isFulfilled = plan.status === "fulfilled"
+
+  return (
+    <button
+      type="button"
+      onClick={onToggleDetails}
+      className="flex items-center gap-1.5"
+    >
+      <Badge variant={isFulfilled ? "secondary" : "destructive"}>
+        {isFulfilled ? (
+          <CircleCheckIcon data-icon="inline-start" />
+        ) : (
+          <AlertTriangleIcon data-icon="inline-start" />
+        )}
+        {isFulfilled ? "In stock" : `Short ${plan.unfulfilledQuantity}`}
+      </Badge>
+      <ChevronDownIcon
+        className={`size-3.5 text-muted-foreground transition-transform ${detailsOpen ? "rotate-180" : ""}`}
+      />
+    </button>
   )
 }
 
