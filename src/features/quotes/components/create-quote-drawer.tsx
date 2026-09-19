@@ -1,8 +1,9 @@
 "use client"
 
 import { useActionState, useEffect, useRef, useState } from "react"
-import { PlusIcon, XIcon } from "lucide-react"
+import { AlertTriangleIcon, CircleCheckIcon, PlusIcon, XIcon } from "lucide-react"
 
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
   Drawer,
@@ -23,9 +24,8 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Spinner } from "@/components/ui/spinner"
-import type { CutPlan } from "@/core/inventory/cut-plan.types"
+import type { CutAllocation, CutPlan } from "@/core/inventory/cut-plan.types"
 import type { Customer } from "@/core/customers/customer.types"
-import { fullName } from "@/core/customers/customer.rules"
 import type { GlassType } from "@/core/products/glass-type.types"
 import type { WindowType } from "@/core/products/window-type.types"
 import { priceLineItem } from "@/core/quotes/quote.rules"
@@ -34,6 +34,7 @@ import { formatMoney } from "@/core/shared/money"
 import { quantitySchema } from "@/core/shared/quantity"
 import { previewCutPlanAction } from "@/features/inventory/actions"
 import { createQuoteAction } from "@/features/quotes/actions"
+import { CustomerCombobox } from "@/features/quotes/components/customer-combobox"
 import { initialQuoteFormState, type QuoteFormState } from "@/features/quotes/form-state"
 
 type CreateQuoteDrawerProps = {
@@ -73,9 +74,6 @@ function emptyLineItem(key: string): DraftLineItem {
 export function CreateQuoteDrawer(props: CreateQuoteDrawerProps) {
   const { open, onOpenChange } = props
 
-  // Same remount-on-reopen pattern used by the entity dialogs: a fresh key
-  // resets all local state (including useActionState) every time the
-  // drawer opens, so a previous attempt's errors/drafts never resurface.
   const [instanceKey, setInstanceKey] = useState(0)
   const wasOpen = useRef(open)
 
@@ -88,7 +86,7 @@ export function CreateQuoteDrawer(props: CreateQuoteDrawerProps) {
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange} swipeDirection="right">
-      <DrawerContent style={{ "--drawer-content-width": "34rem" } as React.CSSProperties}>
+      <DrawerContent className="[--drawer-content-width:100dvw]! sm:[--drawer-content-width:30rem]!">
         <CreateQuoteForm key={instanceKey} {...props} />
       </DrawerContent>
     </Drawer>
@@ -110,7 +108,8 @@ function CreateQuoteForm({
     if (state.status === "success") onOpenChange(false)
   }, [state, onOpenChange])
 
-  const [customerId, setCustomerId] = useState("")
+  const [customerList, setCustomerList] = useState(customers)
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
   const [lineItems, setLineItems] = useState<DraftLineItem[]>(() => [
     emptyLineItem(crypto.randomUUID()),
   ])
@@ -150,7 +149,7 @@ function CreateQuoteForm({
     } catch {
       updateLineItem(item.key, {
         isChecking: false,
-        checkError: "Enter a valid glass type, dimensions, and quantity first.",
+        checkError: "Couldn't check glass availability. Try again in a moment.",
       })
     }
   }
@@ -179,32 +178,24 @@ function CreateQuoteForm({
         </DrawerDescription>
       </DrawerHeader>
 
+      <input
+        type="hidden"
+        name="customerId"
+        value={selectedCustomer?.id ?? ""}
+      />
       <input type="hidden" name="lineItems" value={serializedLineItems} />
 
       <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto px-4 py-4">
         <Field>
-          <FieldLabel htmlFor="customerId">Customer</FieldLabel>
-          <Select
-            name="customerId"
-            value={customerId}
-            onValueChange={(value) => setCustomerId(value ?? "")}
-          >
-            <SelectTrigger id="customerId" className="w-full">
-              <SelectValue placeholder="Select a customer">
-                {(value: string | null) => {
-                  const customer = customers.find((c) => String(c.id) === value)
-                  return customer ? fullName(customer) : "Select a customer"
-                }}
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              {customers.map((customer) => (
-                <SelectItem key={customer.id} value={String(customer.id)}>
-                  {fullName(customer)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <FieldLabel>Customer</FieldLabel>
+          <CustomerCombobox
+            customers={customerList}
+            value={selectedCustomer}
+            onValueChange={setSelectedCustomer}
+            onCustomerCreated={(customer) =>
+              setCustomerList((prev) => [...prev, customer])
+            }
+          />
         </Field>
 
         <div className="flex flex-col gap-4">
@@ -296,6 +287,17 @@ function LineItemRow({
   const price = parsePreviewPrice(item, windowTypes, glassTypes)
   const glassTypeName = glassTypes.find((g) => String(g.id) === item.glassTypeId)?.name
 
+  // Deps are the primitive fields, not `item`/`onCheckAvailability` — both
+  // are new references on every parent render, which would reset this
+  // debounce whenever an unrelated line item changes.
+  useEffect(() => {
+    if (!canCheckAvailability(item)) return
+
+    const timeout = setTimeout(onCheckAvailability, 450)
+    return () => clearTimeout(timeout)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [item.glassTypeId, item.widthIn, item.heightIn, item.quantity])
+
   return (
     <div className="flex flex-col gap-3 rounded-lg border p-3">
       <div className="flex items-center justify-between">
@@ -316,7 +318,7 @@ function LineItemRow({
         )}
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Field>
           <FieldLabel>Window type</FieldLabel>
           <Select
@@ -364,7 +366,7 @@ function LineItemRow({
         </Field>
       </div>
 
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <Field>
           <FieldLabel>Width (in)</FieldLabel>
           <Input
@@ -397,17 +399,8 @@ function LineItemRow({
         </Field>
       </div>
 
-      <div className="flex items-center justify-between gap-3">
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          disabled={!canCheckAvailability(item) || item.isChecking}
-          onClick={onCheckAvailability}
-        >
-          {item.isChecking && <Spinner data-icon="inline-start" />}
-          Check glass availability
-        </Button>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <AvailabilityStatus item={item} />
         {price && (
           <span className="text-sm text-muted-foreground">
             {formatMoney(price.unitPrice)} / unit · {formatMoney(price.lineTotal)} total
@@ -415,9 +408,6 @@ function LineItemRow({
         )}
       </div>
 
-      {item.checkError && (
-        <p className="text-sm text-destructive">{item.checkError}</p>
-      )}
       {item.cutPlan && glassTypeName && (
         <CutPlanPreview plan={item.cutPlan} glassTypeName={glassTypeName} />
       )}
@@ -425,19 +415,53 @@ function LineItemRow({
   )
 }
 
+function AvailabilityStatus({ item }: { item: DraftLineItem }) {
+  if (item.isChecking) {
+    return (
+      <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
+        <Spinner className="size-3.5" />
+        Checking stock…
+      </span>
+    )
+  }
+
+  if (item.checkError) {
+    return <span className="text-sm text-destructive">{item.checkError}</span>
+  }
+
+  const plan = item.cutPlan
+  if (!plan) return null
+
+  const isFulfilled = plan.status === "fulfilled"
+
+  return (
+    <Badge variant={isFulfilled ? "secondary" : "destructive"}>
+      {isFulfilled ? (
+        <CircleCheckIcon data-icon="inline-start" />
+      ) : (
+        <AlertTriangleIcon data-icon="inline-start" />
+      )}
+      {isFulfilled ? "In stock" : `Short ${plan.unfulfilledQuantity}`}
+    </Badge>
+  )
+}
+
 function CutPlanPreview({ plan, glassTypeName }: { plan: CutPlan; glassTypeName: string }) {
   return (
-    <div className="flex flex-col gap-1 rounded-md bg-muted/50 p-2 text-xs text-muted-foreground">
+    <div className="flex flex-col gap-3 rounded-md bg-muted/50 p-2 text-xs text-muted-foreground">
       {plan.allocations.map((allocation, index) => (
-        <p key={index}>
-          Cut {allocation.quantityToCut} from a {allocation.piece.widthIn}×
-          {allocation.piece.heightIn}in {allocation.piece.origin} piece
-          {allocation.offcuts.length > 0
-            ? ` — leaves ${allocation.offcuts
-                .map((offcut) => `${offcut.widthIn}×${offcut.heightIn}in`)
-                .join(" + ")} offcut${allocation.offcuts.length > 1 ? "s" : ""}`
-            : " — exact fit, no offcut"}
-        </p>
+        <div key={index} className="flex items-start gap-3">
+          <CutDiagram allocation={allocation} />
+          <p>
+            Cut {allocation.quantityToCut} from a {allocation.piece.widthIn}×
+            {allocation.piece.heightIn}in {allocation.piece.origin} piece
+            {allocation.offcuts.length > 0
+              ? ` — leaves ${allocation.offcuts
+                  .map((offcut) => `${offcut.widthIn}×${offcut.heightIn}in`)
+                  .join(" + ")} offcut${allocation.offcuts.length > 1 ? "s" : ""}`
+              : " — exact fit, no offcut"}
+          </p>
+        </div>
       ))}
       {plan.status === "partial" && (
         <p className="text-destructive">
@@ -446,5 +470,45 @@ function CutPlanPreview({ plan, glassTypeName }: { plan: CutPlan; glassTypeName:
         </p>
       )}
     </div>
+  )
+}
+
+function CutDiagram({ allocation }: { allocation: CutAllocation }) {
+  const { piece, cut, offcuts } = allocation
+  const height = piece.heightIn
+
+  function flipY(y: number, rectHeight: number) {
+    return height - y - rectHeight
+  }
+
+  return (
+    <svg
+      viewBox={`0 0 ${piece.widthIn} ${height}`}
+      preserveAspectRatio="xMidYMid meet"
+      aria-hidden="true"
+      className="h-16 w-20 shrink-0"
+    >
+      <rect
+        x={cut.x}
+        y={flipY(cut.y, cut.heightIn)}
+        width={cut.widthIn}
+        height={cut.heightIn}
+        strokeWidth={1.5}
+        vectorEffect="non-scaling-stroke"
+        className="fill-primary/20 stroke-primary"
+      />
+      {offcuts.map((offcut, index) => (
+        <rect
+          key={index}
+          x={offcut.x}
+          y={flipY(offcut.y, offcut.heightIn)}
+          width={offcut.widthIn}
+          height={offcut.heightIn}
+          strokeWidth={1}
+          vectorEffect="non-scaling-stroke"
+          className="fill-muted stroke-border"
+        />
+      ))}
+    </svg>
   )
 }

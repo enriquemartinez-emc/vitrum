@@ -51,7 +51,7 @@ describe("guillotineSplit", () => {
     const available = rectangleSchema.parse({ widthIn: 24, heightIn: 60 })
     const cut = rectangleSchema.parse({ widthIn: 24, heightIn: 36 })
     expect(guillotineSplit(available, cut)).toEqual([
-      { widthIn: 24, heightIn: 24 },
+      { x: 0, y: 36, widthIn: 24, heightIn: 24 },
     ])
   })
 
@@ -59,7 +59,7 @@ describe("guillotineSplit", () => {
     const available = rectangleSchema.parse({ widthIn: 60, heightIn: 36 })
     const cut = rectangleSchema.parse({ widthIn: 24, heightIn: 36 })
     expect(guillotineSplit(available, cut)).toEqual([
-      { widthIn: 36, heightIn: 36 },
+      { x: 24, y: 0, widthIn: 36, heightIn: 36 },
     ])
   })
 
@@ -70,8 +70,8 @@ describe("guillotineSplit", () => {
     const available = rectangleSchema.parse({ widthIn: 96, heightIn: 36 })
     const cut = rectangleSchema.parse({ widthIn: 24, heightIn: 24 })
     expect(guillotineSplit(available, cut)).toEqual([
-      { widthIn: 24, heightIn: 12 },
-      { widthIn: 72, heightIn: 36 },
+      { x: 0, y: 24, widthIn: 24, heightIn: 12 },
+      { x: 24, y: 0, widthIn: 72, heightIn: 36 },
     ])
   })
 })
@@ -159,5 +159,22 @@ describe("suggestCutPlan", () => {
     expect(plan.status).toBe("fulfilled")
     if (plan.status !== "fulfilled") throw new Error("expected fulfilled plan")
     expect(plan.allocations[0].offcuts).toEqual([])
+  })
+
+  it("positions the cut at the piece's bottom-left corner", () => {
+    const candidates = [piece({ id: 1, widthIn: 30, heightIn: 40, quantity: 2 })]
+    const plan = suggestCutPlan(
+      request({ widthIn: 24, heightIn: 36, quantity: 1 }),
+      candidates
+    )
+
+    expect(plan.status).toBe("fulfilled")
+    if (plan.status !== "fulfilled") throw new Error("expected fulfilled plan")
+    expect(plan.allocations[0].cut).toEqual({
+      x: 0,
+      y: 0,
+      widthIn: 24,
+      heightIn: 36,
+    })
   })
 })

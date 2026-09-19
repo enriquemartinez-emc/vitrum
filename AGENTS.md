@@ -52,10 +52,18 @@ Build with small, realistic seeded data (not empty tables, not thousands of rows
 
 ## UI patterns
 
+Design mobile-first: build and check the small-screen layout before the desktop one, not the
+other way around.
+
 - **Dialog** for short, focused forms (a handful of fields, e.g. Customers, Products) — an
   in-and-out task that doesn't need much room.
 - **Drawer** for forms with repeating line items or many fields (e.g. Quotes, Orders) — needs
-  space to grow without feeling cramped, and keeps the underlying list visible for context.
+  space to grow without feeling cramped, and keeps the underlying list visible for context on
+  larger screens. Full-screen on mobile, a fixed-width side panel from `sm:` up — override
+  `DrawerContent`'s width with `className="[--drawer-content-width:100dvw]! sm:[--drawer-content-width:<Nrem>]!"`,
+  never a plain `style` object (it can't express the breakpoint and will force one width
+  everywhere). Multi-column field groups inside a Drawer (e.g. a line item's width/height/qty)
+  must stack to `grid-cols-1` below `sm:` too.
 - **AlertDialog** for every destructive confirmation (delete), regardless of entity complexity.
 
 ## Project structure

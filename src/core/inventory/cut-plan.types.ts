@@ -1,4 +1,4 @@
-import type { Rectangle } from "@/core/shared/dimensions"
+import type { PositionedRectangle, Rectangle } from "@/core/shared/dimensions"
 import type { Quantity } from "@/core/shared/quantity"
 import type { GlassPiece } from "@/core/inventory/glass-piece.types"
 import type { GlassTypeId } from "@/core/products/glass-type.types"
@@ -13,7 +13,10 @@ export type CutRequest = {
 export type CutAllocation = {
   piece: GlassPiece
   quantityToCut: Quantity
-  offcuts: Rectangle[]
+  // Both positioned within the piece, origin at its bottom-left corner, so a
+  // caller can render an accurate diagram of the cut without re-deriving it.
+  cut: PositionedRectangle
+  offcuts: PositionedRectangle[]
 }
 
 export type FulfilledCutPlan = {

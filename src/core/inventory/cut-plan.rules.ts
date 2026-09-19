@@ -1,4 +1,9 @@
-import { areaSqFt, rectangleSchema, type Rectangle } from "@/core/shared/dimensions"
+import {
+  areaSqFt,
+  positionedRectangleSchema,
+  type PositionedRectangle,
+  type Rectangle,
+} from "@/core/shared/dimensions"
 import { quantitySchema } from "@/core/shared/quantity"
 import type { GlassPiece } from "@/core/inventory/glass-piece.types"
 import type {
@@ -12,27 +17,68 @@ import type {
 // their shapes. We pick whichever split leaves the larger single rectangle,
 // since one bigger reusable offcut is generally more useful for future cuts
 // than two smaller ones of the same combined area.
-export function guillotineSplit(available: Rectangle, cut: Rectangle): Rectangle[] {
+//
+// The cut is placed at the available rectangle's bottom-left corner (0, 0);
+// offcut positions are relative to that same corner, so a caller can render
+// an accurate diagram directly from this output.
+export function guillotineSplit(
+  available: Rectangle,
+  cut: Rectangle
+): PositionedRectangle[] {
   const rightWidth = available.widthIn - cut.widthIn
   const topHeight = available.heightIn - cut.heightIn
 
   if (rightWidth === 0 && topHeight === 0) return []
 
   if (rightWidth === 0) {
-    return [rectangleSchema.parse({ widthIn: available.widthIn, heightIn: topHeight })]
+    return [
+      positionedRectangleSchema.parse({
+        x: 0,
+        y: cut.heightIn,
+        widthIn: available.widthIn,
+        heightIn: topHeight,
+      }),
+    ]
   }
 
   if (topHeight === 0) {
-    return [rectangleSchema.parse({ widthIn: rightWidth, heightIn: available.heightIn })]
+    return [
+      positionedRectangleSchema.parse({
+        x: cut.widthIn,
+        y: 0,
+        widthIn: rightWidth,
+        heightIn: available.heightIn,
+      }),
+    ]
   }
 
   const horizontalFirst = [
-    rectangleSchema.parse({ widthIn: rightWidth, heightIn: cut.heightIn }),
-    rectangleSchema.parse({ widthIn: available.widthIn, heightIn: topHeight }),
+    positionedRectangleSchema.parse({
+      x: cut.widthIn,
+      y: 0,
+      widthIn: rightWidth,
+      heightIn: cut.heightIn,
+    }),
+    positionedRectangleSchema.parse({
+      x: 0,
+      y: cut.heightIn,
+      widthIn: available.widthIn,
+      heightIn: topHeight,
+    }),
   ]
   const verticalFirst = [
-    rectangleSchema.parse({ widthIn: cut.widthIn, heightIn: topHeight }),
-    rectangleSchema.parse({ widthIn: rightWidth, heightIn: available.heightIn }),
+    positionedRectangleSchema.parse({
+      x: 0,
+      y: cut.heightIn,
+      widthIn: cut.widthIn,
+      heightIn: topHeight,
+    }),
+    positionedRectangleSchema.parse({
+      x: cut.widthIn,
+      y: 0,
+      widthIn: rightWidth,
+      heightIn: available.heightIn,
+    }),
   ]
 
   const largestArea = (rectangles: Rectangle[]) =>
@@ -74,6 +120,12 @@ export function suggestCutPlan(
     allocations.push({
       piece,
       quantityToCut,
+      cut: positionedRectangleSchema.parse({
+        x: 0,
+        y: 0,
+        widthIn: request.widthIn,
+        heightIn: request.heightIn,
+      }),
       offcuts: guillotineSplit(piece, request),
     })
     remaining -= quantityToCut
