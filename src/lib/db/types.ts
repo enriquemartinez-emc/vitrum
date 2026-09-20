@@ -129,6 +129,44 @@ export type Database = {
         }
         Relationships: []
       }
+      orders: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          id: number
+          installation_date: string
+          quote_id: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          id?: never
+          installation_date: string
+          quote_id: number
+          status: string
+          updated_at?: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          id?: never
+          installation_date?: string
+          quote_id?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: true
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       quote_line_items: {
         Row: {
           created_at: string
@@ -257,7 +295,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      create_order_from_quote: { Args: { payload: Json }; Returns: number }
     }
     Enums: {
       [_ in never]: never

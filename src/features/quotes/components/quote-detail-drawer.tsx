@@ -17,11 +17,8 @@ import {
 } from "@/components/ui/drawer"
 import { Spinner } from "@/components/ui/spinner"
 import { formatMoney } from "@/core/shared/money"
-import {
-  approveQuoteAction,
-  declineQuoteAction,
-  getQuoteDetailAction,
-} from "@/features/quotes/actions"
+import { CreateOrderDialog } from "@/features/orders/components/create-order-dialog"
+import { declineQuoteAction, getQuoteDetailAction } from "@/features/quotes/actions"
 import type { QuoteDetail } from "@/features/quotes/repository"
 
 const STATUS_LABEL: Record<QuoteDetail["status"], string> = {
@@ -48,6 +45,7 @@ export function QuoteDetailDrawer({
   const [detail, setDetail] = useState<QuoteDetail | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [isPending, startTransition] = useTransition()
+  const [createOrderOpen, setCreateOrderOpen] = useState(false)
 
   useEffect(() => {
     if (!open || quoteId === null) {
@@ -69,14 +67,6 @@ export function QuoteDetailDrawer({
       cancelled = true
     }
   }, [open, quoteId])
-
-  function handleApprove() {
-    if (quoteId === null) return
-    startTransition(async () => {
-      await approveQuoteAction(quoteId)
-      onOpenChange(false)
-    })
-  }
 
   function handleDecline() {
     if (quoteId === null) return
@@ -138,6 +128,14 @@ export function QuoteDetailDrawer({
                   </div>
                 ))}
               </div>
+
+              {detail.order && (
+                <p className="text-sm text-muted-foreground">
+                  {detail.order.status === "complete"
+                    ? "Order installed and complete."
+                    : `Order scheduled for ${detail.order.installationDate}.`}
+                </p>
+              )}
             </>
           )}
         </div>
@@ -151,12 +149,27 @@ export function QuoteDetailDrawer({
             >
               Decline
             </Button>
-            <Button disabled={isPending} onClick={handleApprove}>
-              Approve
-            </Button>
+            <Button onClick={() => setCreateOrderOpen(true)}>Approve</Button>
+          </DrawerFooter>
+        )}
+
+        {detail?.status === "approved" && !detail.order && (
+          <DrawerFooter>
+            <Button onClick={() => setCreateOrderOpen(true)}>Create order</Button>
           </DrawerFooter>
         )}
       </DrawerContent>
+
+      {detail && (
+        <CreateOrderDialog
+          quoteId={detail.id}
+          open={createOrderOpen}
+          onOpenChange={setCreateOrderOpen}
+          onCreated={() => {
+            getQuoteDetailAction(detail.id).then(setDetail)
+          }}
+        />
+      )}
     </Drawer>
   )
 }

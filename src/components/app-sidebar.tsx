@@ -44,7 +44,7 @@ const data = {
         },
         {
           title: "Orders",
-          url: "#",
+          url: "/dashboard/orders",
         },
         {
           title: "Customers",

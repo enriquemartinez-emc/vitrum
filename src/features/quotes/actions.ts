@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache"
 import { z } from "zod"
 
 import { customerIdSchema } from "@/core/customers/customer.types"
-import { approveQuote, declineQuote, priceLineItem } from "@/core/quotes/quote.rules"
+import { declineQuote, priceLineItem } from "@/core/quotes/quote.rules"
 import { newQuoteLineItemSchema, quoteIdSchema } from "@/core/quotes/quote.types"
 import type { QuoteFormState } from "@/features/quotes/form-state"
 import * as repository from "@/features/quotes/repository"
@@ -82,16 +82,6 @@ export async function createQuoteAction(
 
 export async function getQuoteDetailAction(id: number): Promise<QuoteDetail | null> {
   return repository.getQuoteDetail(quoteIdSchema.parse(id))
-}
-
-export async function approveQuoteAction(id: number): Promise<void> {
-  const quote = await repository.getQuote(quoteIdSchema.parse(id))
-  if (!quote || quote.status !== "pending") return
-
-  const approved = approveQuote(quote, new Date().toISOString())
-  await repository.markQuoteApproved(approved.id, approved.approvedAt)
-
-  revalidatePath("/dashboard/quotes")
 }
 
 export async function declineQuoteAction(id: number): Promise<void> {
