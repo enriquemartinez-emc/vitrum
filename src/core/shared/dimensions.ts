@@ -1,6 +1,11 @@
 import { z } from "zod"
 
-export const inchesSchema = z.number().positive().brand<"Inches">()
+// Matches the numeric(6,2) columns Inches values are stored in (glass_pieces
+// and quote_line_items' width_in/height_in) — keeps the Core value object
+// honest about what the DB can actually hold.
+const MAX_INCHES = 9999.99
+
+export const inchesSchema = z.number().positive().max(MAX_INCHES).brand<"Inches">()
 export type Inches = z.infer<typeof inchesSchema>
 
 export const rectangleSchema = z.object({

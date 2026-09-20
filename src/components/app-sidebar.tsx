@@ -78,7 +78,7 @@ const data = {
       items: [
         {
           title: "Register Shipment",
-          url: "#",
+          url: "/dashboard/inventory",
         },
       ],
     },
