@@ -14,11 +14,11 @@ import {
 } from "@/components/ui/dialog"
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
+import { createOrderAction } from "@/features/orders/actions"
 import {
-  createOrderAction,
   initialOrderFormState,
   type OrderFormState,
-} from "@/features/orders/actions"
+} from "@/features/orders/form-state"
 
 type CreateOrderDialogProps = {
   quoteId: number

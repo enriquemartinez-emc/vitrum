@@ -12,17 +12,11 @@ import { glassTypeIdSchema } from "@/core/products/glass-type.types"
 import { quoteIdSchema, type QuoteLineItem } from "@/core/quotes/quote.types"
 import { quantitySchema } from "@/core/shared/quantity"
 import * as inventoryRepository from "@/features/inventory/repository"
+import type { OrderFormState } from "@/features/orders/form-state"
 import type { OrderDetail } from "@/features/orders/repository"
 import * as ordersRepository from "@/features/orders/repository"
 import * as glassTypesRepository from "@/features/products/glass-types.repository"
 import * as quotesRepository from "@/features/quotes/repository"
-
-export type OrderFormState = {
-  status: "idle" | "error" | "success"
-  message?: string
-}
-
-export const initialOrderFormState: OrderFormState = { status: "idle" }
 
 const createOrderInputSchema = z.object({
   quoteId: z.coerce.number().int().positive(),
