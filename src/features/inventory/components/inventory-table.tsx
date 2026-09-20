@@ -1,3 +1,4 @@
+import { format } from "date-fns"
 import { PackageIcon } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
@@ -76,6 +77,7 @@ export function InventoryTable({
                   <TableHead>Size</TableHead>
                   <TableHead>Quantity</TableHead>
                   <TableHead>Origin</TableHead>
+                  <TableHead>Recorded</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -90,6 +92,9 @@ export function InventoryTable({
                       <Badge variant={piece.origin === "shipment" ? "secondary" : "outline"}>
                         {ORIGIN_LABEL[piece.origin]}
                       </Badge>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {format(new Date(piece.createdAt), "MMM d, yyyy")}
                     </TableCell>
                   </TableRow>
                 ))}

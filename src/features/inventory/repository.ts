@@ -90,9 +90,8 @@ export async function listGlassPieces(page: number): Promise<GlassPiecesPage> {
       getDb()
         .from("glass_pieces")
         .select("*, glass_types(name)")
-        .order("glass_type_id", { ascending: true })
-        .order("width_in", { ascending: false })
-        .order("height_in", { ascending: false })
+        .order("created_at", { ascending: false })
+        .order("id", { ascending: false })
         .range(from, to),
   })
 
