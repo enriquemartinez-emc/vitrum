@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useRef, useState } from "react"
 
+import { DatePickerField } from "@/components/date-picker-field"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -13,7 +14,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field"
-import { Input } from "@/components/ui/input"
 import { createOrderAction } from "@/features/orders/actions"
 import {
   initialOrderFormState,
@@ -62,28 +62,26 @@ function CreateOrderForm({ quoteId, onOpenChange, onCreated }: CreateOrderDialog
     }
   }, [state, onOpenChange, onCreated])
 
-  const [installationDate, setInstallationDate] = useState("")
+  const [installationDate, setInstallationDate] = useState<Date>()
 
   return (
     <form action={formAction} className="flex flex-col gap-4">
       <input type="hidden" name="quoteId" value={quoteId} />
       <DialogHeader>
-        <DialogTitle>Create order</DialogTitle>
+        <DialogTitle>Schedule installation</DialogTitle>
         <DialogDescription>
-          Agree on an installation date to schedule this order.
+          Set an installation date to schedule the order for this quote.
         </DialogDescription>
       </DialogHeader>
       <FieldGroup>
         <Field data-invalid={state.status === "error"}>
           <FieldLabel htmlFor="installationDate">Installation date</FieldLabel>
-          <Input
+          <DatePickerField
             id="installationDate"
             name="installationDate"
-            type="date"
             value={installationDate}
-            onChange={(event) => setInstallationDate(event.target.value)}
-            aria-invalid={state.status === "error"}
-            required
+            onChange={setInstallationDate}
+            ariaInvalid={state.status === "error"}
           />
           <FieldError
             errors={
@@ -99,7 +97,7 @@ function CreateOrderForm({ quoteId, onOpenChange, onCreated }: CreateOrderDialog
           Cancel
         </DialogClose>
         <Button type="submit" disabled={isPending || !installationDate}>
-          Create order
+          Confirm
         </Button>
       </DialogFooter>
     </form>

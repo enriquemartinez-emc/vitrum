@@ -18,11 +18,7 @@ import {
 import { Spinner } from "@/components/ui/spinner"
 import { formatMoney } from "@/core/shared/money"
 import { CreateOrderDialog } from "@/features/orders/components/create-order-dialog"
-import {
-  approveQuoteAction,
-  declineQuoteAction,
-  getQuoteDetailAction,
-} from "@/features/quotes/actions"
+import { declineQuoteAction, getQuoteDetailAction } from "@/features/quotes/actions"
 import type { QuoteDetail } from "@/features/quotes/repository"
 
 const STATUS_LABEL: Record<QuoteDetail["status"], string> = {
@@ -71,14 +67,6 @@ export function QuoteDetailDrawer({
       cancelled = true
     }
   }, [open, quoteId])
-
-  function handleApprove() {
-    if (quoteId === null) return
-    startTransition(async () => {
-      await approveQuoteAction(quoteId)
-      onOpenChange(false)
-    })
-  }
 
   function handleDecline() {
     if (quoteId === null) return
@@ -161,9 +149,7 @@ export function QuoteDetailDrawer({
             >
               Decline
             </Button>
-            <Button disabled={isPending} onClick={handleApprove}>
-              Approve
-            </Button>
+            <Button onClick={() => setCreateOrderOpen(true)}>Approve</Button>
           </DrawerFooter>
         )}
 

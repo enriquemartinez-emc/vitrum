@@ -9,6 +9,7 @@ import type { CutAllocation } from "@/core/inventory/cut-plan.types"
 import { completeOrder } from "@/core/orders/order.rules"
 import { orderIdSchema } from "@/core/orders/order.types"
 import { glassTypeIdSchema } from "@/core/products/glass-type.types"
+import { approveQuote } from "@/core/quotes/quote.rules"
 import { quoteIdSchema, type QuoteLineItem } from "@/core/quotes/quote.types"
 import { quantitySchema } from "@/core/shared/quantity"
 import * as inventoryRepository from "@/features/inventory/repository"
@@ -106,15 +107,30 @@ export async function createOrderAction(
     ordersRepository.getOrderByQuoteId(quoteId),
   ])
 
-  if (!quote || quote.status !== "approved") {
-    return { status: "error", message: "This quote isn't approved." }
+  if (!quote) {
+    return { status: "error", message: "This quote no longer exists." }
+  }
+
+  if (quote.status === "declined") {
+    return { status: "error", message: "This quote was declined." }
   }
 
   if (existingOrder) {
     return { status: "error", message: "This quote already has an order." }
   }
 
-  const plan = await planLineItems(quote.lineItems)
+  // A quote here is either already approved (retrying after a previous
+  // attempt failed, e.g. for insufficient stock) or still pending. When
+  // pending, the approval is only written below once the order plan is
+  // confirmed fulfillable — approving and creating the order happen
+  // together, or neither does, so a stock shortfall never leaves the quote
+  // approved with no order to show for it.
+  const wasAlreadyApproved = quote.status === "approved"
+  const approvedQuote = wasAlreadyApproved
+    ? quote
+    : approveQuote(quote, new Date().toISOString())
+
+  const plan = await planLineItems(approvedQuote.lineItems)
 
   if (plan.status === "insufficient") {
     return {
@@ -123,7 +139,11 @@ export async function createOrderAction(
     }
   }
 
-  await ordersRepository.createOrderFromQuote(quote, parsed.data.installationDate, {
+  if (!wasAlreadyApproved) {
+    await quotesRepository.markQuoteApproved(approvedQuote.id, approvedQuote.approvedAt)
+  }
+
+  await ordersRepository.createOrderFromQuote(approvedQuote, parsed.data.installationDate, {
     decrements: plan.allocations.map((allocation) => ({
       pieceId: allocation.piece.id,
       amount: allocation.quantityToCut,
