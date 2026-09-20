@@ -11,6 +11,7 @@ import { inchesSchema } from "@/core/shared/dimensions"
 import { quantitySchema } from "@/core/shared/quantity"
 import * as repository from "@/features/inventory/repository"
 import type { ShipmentFormState } from "@/features/inventory/form-state"
+import * as glassTypesRepository from "@/features/products/glass-types.repository"
 
 const cutRequestInputSchema = z.object({
   glassTypeId: glassTypeIdSchema,
@@ -61,6 +62,12 @@ function readShipmentForm(formData: FormData) {
   }
 }
 
+const GLASS_TYPE_GONE_ERROR: ShipmentFormState = {
+  status: "error",
+  message: "Check the highlighted fields.",
+  fieldErrors: { glassTypeId: ["This glass type no longer exists."] },
+}
+
 export async function registerShipmentAction(
   _prevState: ShipmentFormState,
   formData: FormData
@@ -74,6 +81,9 @@ export async function registerShipmentAction(
       fieldErrors: z.flattenError(parsed.error).fieldErrors,
     }
   }
+
+  const glassType = await glassTypesRepository.getGlassType(parsed.data.glassTypeId)
+  if (!glassType) return GLASS_TYPE_GONE_ERROR
 
   await repository.insertGlassPiece({ ...parsed.data, origin: "shipment" })
 
@@ -104,7 +114,13 @@ export async function updateShipmentAction(
     return { status: "error", message: "This piece no longer exists." }
   }
 
-  await repository.updateGlassPiece({ ...existing, ...parsed.data })
+  const glassType = await glassTypesRepository.getGlassType(parsed.data.glassTypeId)
+  if (!glassType) return GLASS_TYPE_GONE_ERROR
+
+  const updated = await repository.updateGlassPiece({ ...existing, ...parsed.data })
+  if (!updated) {
+    return { status: "error", message: "This piece no longer exists." }
+  }
 
   revalidatePath("/dashboard/inventory")
 

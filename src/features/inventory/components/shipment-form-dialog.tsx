@@ -151,8 +151,9 @@ function ShipmentForm(props: ShipmentFormDialogProps) {
               id="widthIn"
               name="widthIn"
               type="number"
-              min="0.125"
-              step="0.125"
+              min="0.01"
+              max="9999.99"
+              step="0.01"
               value={values.widthIn}
               onChange={updateField("widthIn")}
               aria-invalid={!!state.fieldErrors?.widthIn}
@@ -166,8 +167,9 @@ function ShipmentForm(props: ShipmentFormDialogProps) {
               id="heightIn"
               name="heightIn"
               type="number"
-              min="0.125"
-              step="0.125"
+              min="0.01"
+              max="9999.99"
+              step="0.01"
               value={values.heightIn}
               onChange={updateField("heightIn")}
               aria-invalid={!!state.fieldErrors?.heightIn}

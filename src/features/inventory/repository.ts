@@ -71,7 +71,9 @@ export async function getGlassPiece(id: GlassPieceId): Promise<GlassPiece | null
   return toGlassPiece(data)
 }
 
-export async function updateGlassPiece(piece: GlassPiece): Promise<GlassPiece> {
+export async function updateGlassPiece(
+  piece: GlassPiece
+): Promise<GlassPiece | null> {
   const { data, error } = await getDb()
     .from("glass_pieces")
     .update({
@@ -82,9 +84,10 @@ export async function updateGlassPiece(piece: GlassPiece): Promise<GlassPiece> {
     })
     .eq("id", piece.id)
     .select()
-    .single()
+    .maybeSingle()
 
   if (error) throw error
+  if (!data) return null
 
   return toGlassPiece(data)
 }
