@@ -21,6 +21,7 @@ import {
 import { TablePagination } from "@/components/table-pagination"
 import type { GlassType } from "@/core/products/glass-type.types"
 import { RegisterShipmentButton } from "@/features/inventory/components/register-shipment-button"
+import { ShipmentRowActions } from "@/features/inventory/components/shipment-row-actions"
 import type { GlassPiecesPage } from "@/features/inventory/repository"
 
 const ORIGIN_LABEL: Record<GlassPiecesPage["pieces"][number]["origin"], string> = {
@@ -78,6 +79,9 @@ export function InventoryTable({
                   <TableHead>Quantity</TableHead>
                   <TableHead>Origin</TableHead>
                   <TableHead>Recorded</TableHead>
+                  <TableHead className="w-10">
+                    <span className="sr-only">Actions</span>
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -95,6 +99,9 @@ export function InventoryTable({
                     </TableCell>
                     <TableCell className="text-muted-foreground">
                       {format(new Date(piece.createdAt), "MMM d, yyyy")}
+                    </TableCell>
+                    <TableCell>
+                      <ShipmentRowActions piece={piece} glassTypes={glassTypes} />
                     </TableCell>
                   </TableRow>
                 ))}

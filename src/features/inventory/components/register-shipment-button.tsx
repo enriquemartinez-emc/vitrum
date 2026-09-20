@@ -5,7 +5,7 @@ import { PlusIcon } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import type { GlassType } from "@/core/products/glass-type.types"
-import { RegisterShipmentDialog } from "@/features/inventory/components/register-shipment-dialog"
+import { ShipmentFormDialog } from "@/features/inventory/components/shipment-form-dialog"
 
 export function RegisterShipmentButton({ glassTypes }: { glassTypes: GlassType[] }) {
   const [open, setOpen] = useState(false)
@@ -16,7 +16,12 @@ export function RegisterShipmentButton({ glassTypes }: { glassTypes: GlassType[]
         <PlusIcon data-icon="inline-start" />
         Register shipment
       </Button>
-      <RegisterShipmentDialog open={open} onOpenChange={setOpen} glassTypes={glassTypes} />
+      <ShipmentFormDialog
+        mode="create"
+        open={open}
+        onOpenChange={setOpen}
+        glassTypes={glassTypes}
+      />
     </>
   )
 }

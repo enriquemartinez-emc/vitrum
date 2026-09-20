@@ -5,6 +5,7 @@ import { z } from "zod"
 
 import { suggestCutPlan } from "@/core/inventory/cut-plan.rules"
 import type { CutPlan } from "@/core/inventory/cut-plan.types"
+import { glassPieceIdSchema } from "@/core/inventory/glass-piece.types"
 import { glassTypeIdSchema } from "@/core/products/glass-type.types"
 import { inchesSchema } from "@/core/shared/dimensions"
 import { quantitySchema } from "@/core/shared/quantity"
@@ -79,4 +80,38 @@ export async function registerShipmentAction(
   revalidatePath("/dashboard/inventory")
 
   return { status: "success" }
+}
+
+export async function updateShipmentAction(
+  id: number,
+  _prevState: ShipmentFormState,
+  formData: FormData
+): Promise<ShipmentFormState> {
+  const parsed = registerShipmentInputSchema.safeParse(readShipmentForm(formData))
+
+  if (!parsed.success) {
+    return {
+      status: "error",
+      message: "Check the highlighted fields.",
+      fieldErrors: z.flattenError(parsed.error).fieldErrors,
+    }
+  }
+
+  const pieceId = glassPieceIdSchema.parse(id)
+  const existing = await repository.getGlassPiece(pieceId)
+
+  if (!existing) {
+    return { status: "error", message: "This piece no longer exists." }
+  }
+
+  await repository.updateGlassPiece({ ...existing, ...parsed.data })
+
+  revalidatePath("/dashboard/inventory")
+
+  return { status: "success" }
+}
+
+export async function deleteShipmentAction(id: number): Promise<void> {
+  await repository.deleteGlassPiece(glassPieceIdSchema.parse(id))
+  revalidatePath("/dashboard/inventory")
 }

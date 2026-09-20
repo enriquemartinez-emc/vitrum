@@ -3,6 +3,7 @@ import "server-only"
 import {
   glassPieceSchema,
   type GlassPiece,
+  type GlassPieceId,
   type NewGlassPiece,
 } from "@/core/inventory/glass-piece.types"
 import type { GlassTypeId } from "@/core/products/glass-type.types"
@@ -55,6 +56,43 @@ export async function insertGlassPiece(input: NewGlassPiece): Promise<GlassPiece
   if (error) throw error
 
   return toGlassPiece(data)
+}
+
+export async function getGlassPiece(id: GlassPieceId): Promise<GlassPiece | null> {
+  const { data, error } = await getDb()
+    .from("glass_pieces")
+    .select()
+    .eq("id", id)
+    .maybeSingle()
+
+  if (error) throw error
+  if (!data) return null
+
+  return toGlassPiece(data)
+}
+
+export async function updateGlassPiece(piece: GlassPiece): Promise<GlassPiece> {
+  const { data, error } = await getDb()
+    .from("glass_pieces")
+    .update({
+      glass_type_id: piece.glassTypeId,
+      width_in: piece.widthIn,
+      height_in: piece.heightIn,
+      quantity: piece.quantity,
+    })
+    .eq("id", piece.id)
+    .select()
+    .single()
+
+  if (error) throw error
+
+  return toGlassPiece(data)
+}
+
+export async function deleteGlassPiece(id: GlassPieceId): Promise<void> {
+  const { error } = await getDb().from("glass_pieces").delete().eq("id", id)
+
+  if (error) throw error
 }
 
 export const GLASS_PIECES_PAGE_SIZE = 10

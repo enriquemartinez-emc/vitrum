@@ -21,24 +21,44 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import type { GlassPiece } from "@/core/inventory/glass-piece.types"
 import type { GlassType } from "@/core/products/glass-type.types"
-import { registerShipmentAction } from "@/features/inventory/actions"
+import {
+  registerShipmentAction,
+  updateShipmentAction,
+} from "@/features/inventory/actions"
 import {
   initialShipmentFormState,
   type ShipmentFormState,
 } from "@/features/inventory/form-state"
 
-type RegisterShipmentDialogProps = {
+type ShipmentFormDialogProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
   glassTypes: GlassType[]
+} & ({ mode: "create" } | { mode: "edit"; piece: GlassPiece })
+
+type FormValues = {
+  glassTypeId: string
+  widthIn: string
+  heightIn: string
+  quantity: string
+}
+
+function valuesFor(piece: GlassPiece | undefined): FormValues {
+  return {
+    glassTypeId: piece ? String(piece.glassTypeId) : "",
+    widthIn: piece ? String(piece.widthIn) : "",
+    heightIn: piece ? String(piece.heightIn) : "",
+    quantity: piece ? String(piece.quantity) : "1",
+  }
 }
 
 function asFieldErrors(messages?: string[]) {
   return messages?.map((message) => ({ message }))
 }
 
-export function RegisterShipmentDialog(props: RegisterShipmentDialogProps) {
+export function ShipmentFormDialog(props: ShipmentFormDialogProps) {
   const { open, onOpenChange } = props
 
   const [instanceKey, setInstanceKey] = useState(0)
@@ -54,33 +74,46 @@ export function RegisterShipmentDialog(props: RegisterShipmentDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
-        <RegisterShipmentForm key={instanceKey} {...props} />
+        <ShipmentForm key={instanceKey} {...props} />
       </DialogContent>
     </Dialog>
   )
 }
 
-function RegisterShipmentForm({ onOpenChange, glassTypes }: RegisterShipmentDialogProps) {
-  const [state, formAction, isPending] = useActionState<ShipmentFormState, FormData>(
-    registerShipmentAction,
-    initialShipmentFormState
-  )
+function ShipmentForm(props: ShipmentFormDialogProps) {
+  const { onOpenChange, mode, glassTypes } = props
+  const action =
+    mode === "create"
+      ? registerShipmentAction
+      : updateShipmentAction.bind(null, props.piece.id)
+
+  const [state, formAction, isPending] = useActionState<
+    ShipmentFormState,
+    FormData
+  >(action, initialShipmentFormState)
 
   useEffect(() => {
     if (state.status === "success") onOpenChange(false)
   }, [state, onOpenChange])
 
-  const [glassTypeId, setGlassTypeId] = useState("")
-  const [widthIn, setWidthIn] = useState("")
-  const [heightIn, setHeightIn] = useState("")
-  const [quantity, setQuantity] = useState("1")
+  const piece = mode === "edit" ? props.piece : undefined
+  const [values, setValues] = useState(() => valuesFor(piece))
+
+  function updateField<Field extends keyof FormValues>(field: Field) {
+    return (event: React.ChangeEvent<HTMLInputElement>) =>
+      setValues((prev) => ({ ...prev, [field]: event.target.value }))
+  }
 
   return (
     <form action={formAction} className="flex flex-col gap-4">
       <DialogHeader>
-        <DialogTitle>Register shipment</DialogTitle>
+        <DialogTitle>
+          {mode === "create" ? "Register shipment" : "Edit shipment"}
+        </DialogTitle>
         <DialogDescription>
-          Add newly purchased glass stock to inventory.
+          {mode === "create"
+            ? "Add newly purchased glass stock to inventory."
+            : "Update this piece's details."}
         </DialogDescription>
       </DialogHeader>
       <FieldGroup>
@@ -88,8 +121,10 @@ function RegisterShipmentForm({ onOpenChange, glassTypes }: RegisterShipmentDial
           <FieldLabel htmlFor="glassTypeId">Glass type</FieldLabel>
           <Select
             name="glassTypeId"
-            value={glassTypeId}
-            onValueChange={(value) => setGlassTypeId(value ?? "")}
+            value={values.glassTypeId}
+            onValueChange={(value) =>
+              setValues((prev) => ({ ...prev, glassTypeId: value ?? "" }))
+            }
           >
             <SelectTrigger id="glassTypeId" className="w-full">
               <SelectValue placeholder="Select a glass type">
@@ -118,8 +153,8 @@ function RegisterShipmentForm({ onOpenChange, glassTypes }: RegisterShipmentDial
               type="number"
               min="0.125"
               step="0.125"
-              value={widthIn}
-              onChange={(event) => setWidthIn(event.target.value)}
+              value={values.widthIn}
+              onChange={updateField("widthIn")}
               aria-invalid={!!state.fieldErrors?.widthIn}
               required
             />
@@ -133,8 +168,8 @@ function RegisterShipmentForm({ onOpenChange, glassTypes }: RegisterShipmentDial
               type="number"
               min="0.125"
               step="0.125"
-              value={heightIn}
-              onChange={(event) => setHeightIn(event.target.value)}
+              value={values.heightIn}
+              onChange={updateField("heightIn")}
               aria-invalid={!!state.fieldErrors?.heightIn}
               required
             />
@@ -148,8 +183,8 @@ function RegisterShipmentForm({ onOpenChange, glassTypes }: RegisterShipmentDial
               type="number"
               min="1"
               step="1"
-              value={quantity}
-              onChange={(event) => setQuantity(event.target.value)}
+              value={values.quantity}
+              onChange={updateField("quantity")}
               aria-invalid={!!state.fieldErrors?.quantity}
               required
             />
@@ -165,7 +200,7 @@ function RegisterShipmentForm({ onOpenChange, glassTypes }: RegisterShipmentDial
           Cancel
         </DialogClose>
         <Button type="submit" disabled={isPending}>
-          Register shipment
+          {mode === "create" ? "Register shipment" : "Save changes"}
         </Button>
       </DialogFooter>
     </form>
