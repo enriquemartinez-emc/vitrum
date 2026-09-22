@@ -1,3 +1,4 @@
+import type { Customer } from "@/core/customers/customer.types"
 import type { GlassType } from "@/core/products/glass-type.types"
 import type { WindowType } from "@/core/products/window-type.types"
 import type {
@@ -5,10 +6,13 @@ import type {
   DeclinedQuote,
   NewQuoteLineItem,
   PendingQuote,
+  QuoteDraftCandidate,
+  QuoteDraftLineItem,
   QuoteLineItem,
 } from "@/core/quotes/quote.types"
-import { areaSqFt } from "@/core/shared/dimensions"
+import { areaSqFt, inchesSchema } from "@/core/shared/dimensions"
 import { moneySchema, type Money } from "@/core/shared/money"
+import { quantitySchema } from "@/core/shared/quantity"
 
 export function priceLineItem(
   lineItem: Pick<NewQuoteLineItem, "widthIn" | "heightIn" | "quantity">,
@@ -56,4 +60,41 @@ export function declineQuote(
     status: "declined",
     declinedAt,
   }
+}
+
+// Resolves an unvalidated draft (e.g. from an AI extraction) against the real
+// catalog: every id must exist and every dimension/quantity must be in range,
+// or that line item is dropped rather than trusted. A candidate customerId
+// that matches no customer resolves to null, same as a missing one.
+export function resolveQuoteDraft(
+  candidate: QuoteDraftCandidate,
+  catalog: { customers: Customer[]; windowTypes: WindowType[]; glassTypes: GlassType[] }
+): { matchedCustomerId: number | null; lineItems: QuoteDraftLineItem[] } {
+  const lineItems: QuoteDraftLineItem[] = []
+
+  for (const item of candidate.lineItems) {
+    const windowType = catalog.windowTypes.find((w) => w.id === item.windowTypeId)
+    const glassType = catalog.glassTypes.find((g) => g.id === item.glassTypeId)
+    const widthIn = inchesSchema.safeParse(item.widthIn)
+    const heightIn = inchesSchema.safeParse(item.heightIn)
+    const quantity = quantitySchema.safeParse(item.quantity)
+
+    if (!windowType || !glassType || !widthIn.success || !heightIn.success || !quantity.success) {
+      continue
+    }
+
+    lineItems.push({
+      windowTypeId: windowType.id,
+      glassTypeId: glassType.id,
+      widthIn: widthIn.data,
+      heightIn: heightIn.data,
+      quantity: quantity.data,
+    })
+  }
+
+  const matchedCustomer = candidate.customerId
+    ? (catalog.customers.find((c) => c.id === candidate.customerId) ?? null)
+    : null
+
+  return { matchedCustomerId: matchedCustomer?.id ?? null, lineItems }
 }
