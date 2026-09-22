@@ -314,6 +314,48 @@ export type Database = {
     }
     Functions: {
       create_order_from_quote: { Args: { payload: Json }; Returns: number }
+      get_glass_type_demand: {
+        Args: { p_from: string; p_limit?: number; p_to: string }
+        Returns: {
+          glass_type_name: string
+          total_quantity: number
+          total_sqft: number
+        }[]
+      }
+      get_order_status_summary: {
+        Args: { p_as_of?: string }
+        Returns: {
+          complete_count: number
+          overdue_count: number
+          scheduled_count: number
+        }[]
+      }
+      get_quote_conversion_summary: {
+        Args: { p_from: string; p_to: string }
+        Returns: {
+          approval_rate: number
+          approved_count: number
+          declined_count: number
+          pending_count: number
+        }[]
+      }
+      get_revenue_summary: {
+        Args: { p_from: string; p_to: string }
+        Returns: {
+          average_quote_cents: number
+          quote_count: number
+          total_cents: number
+        }[]
+      }
+      get_top_customers_by_revenue: {
+        Args: { p_from: string; p_limit?: number; p_to: string }
+        Returns: {
+          customer_id: number
+          customer_name: string
+          quote_count: number
+          total_cents: number
+        }[]
+      }
       increment_ai_usage_counter: {
         Args: { p_day: string; p_feature: string }
         Returns: number
