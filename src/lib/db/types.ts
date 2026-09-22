@@ -34,6 +34,24 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_usage_counters: {
+        Row: {
+          day: string
+          feature: string
+          request_count: number
+        }
+        Insert: {
+          day: string
+          feature: string
+          request_count?: number
+        }
+        Update: {
+          day?: string
+          feature?: string
+          request_count?: number
+        }
+        Relationships: []
+      }
       customers: {
         Row: {
           address: string | null
@@ -296,6 +314,10 @@ export type Database = {
     }
     Functions: {
       create_order_from_quote: { Args: { payload: Json }; Returns: number }
+      increment_ai_usage_counter: {
+        Args: { p_day: string; p_feature: string }
+        Returns: number
+      }
     }
     Enums: {
       [_ in never]: never

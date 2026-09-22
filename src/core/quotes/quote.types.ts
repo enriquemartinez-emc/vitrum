@@ -73,3 +73,19 @@ export const newQuoteSchema = z.object({
   lineItems: z.array(newQuoteLineItemSchema).min(1),
 })
 export type NewQuote = z.infer<typeof newQuoteSchema>
+
+// A candidate line item is unvalidated — its ids and dimensions are only a
+// claim (e.g. from an AI extraction) until resolveQuoteDraft checks them
+// against the real catalog.
+export type QuoteDraftLineItem = {
+  windowTypeId: number
+  glassTypeId: number
+  widthIn: number
+  heightIn: number
+  quantity: number
+}
+
+export type QuoteDraftCandidate = {
+  customerId: number | null
+  lineItems: QuoteDraftLineItem[]
+}

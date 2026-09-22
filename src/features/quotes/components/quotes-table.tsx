@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { PlusIcon, ReceiptTextIcon } from "lucide-react"
+import { PlusIcon, ReceiptTextIcon, SparklesIcon } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -26,6 +26,8 @@ import type { Customer } from "@/core/customers/customer.types"
 import type { GlassType } from "@/core/products/glass-type.types"
 import type { WindowType } from "@/core/products/window-type.types"
 import { formatMoney } from "@/core/shared/money"
+import type { QuoteDraft } from "@/features/quotes/ai/actions"
+import { AiQuoteAssistantDialog } from "@/features/quotes/components/ai-quote-assistant-dialog"
 import { CreateQuoteDrawer } from "@/features/quotes/components/create-quote-drawer"
 import { QuoteDetailDrawer } from "@/features/quotes/components/quote-detail-drawer"
 import { QuoteRowActions } from "@/features/quotes/components/quote-row-actions"
@@ -63,18 +65,31 @@ export function QuotesTable({
   const lastRow = Math.min(page * pageSize, totalCount)
 
   const [createOpen, setCreateOpen] = useState(false)
+  const [aiOpen, setAiOpen] = useState(false)
+  const [aiDraft, setAiDraft] = useState<QuoteDraft | null>(null)
   const [detailQuoteId, setDetailQuoteId] = useState<number | null>(null)
+
+  function openManualCreate() {
+    setAiDraft(null)
+    setCreateOpen(true)
+  }
 
   return (
     <div className="flex flex-col gap-4 px-4 py-4 md:gap-6 md:py-6 lg:px-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm text-muted-foreground">
           {totalCount} {totalCount === 1 ? "quote" : "quotes"}
         </p>
-        <Button onClick={() => setCreateOpen(true)}>
-          <PlusIcon data-icon="inline-start" />
-          New quote
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant="outline" onClick={() => setAiOpen(true)}>
+            <SparklesIcon data-icon="inline-start" />
+            Quote from text
+          </Button>
+          <Button onClick={openManualCreate}>
+            <PlusIcon data-icon="inline-start" />
+            New quote
+          </Button>
+        </div>
       </div>
 
       {totalCount === 0 ? (
@@ -89,7 +104,7 @@ export function QuotesTable({
             </EmptyDescription>
           </EmptyHeader>
           <EmptyContent>
-            <Button onClick={() => setCreateOpen(true)}>
+            <Button onClick={openManualCreate}>
               <PlusIcon data-icon="inline-start" />
               New quote
             </Button>
@@ -143,12 +158,24 @@ export function QuotesTable({
         </>
       )}
 
+      <AiQuoteAssistantDialog
+        open={aiOpen}
+        onOpenChange={setAiOpen}
+        onDraftReady={(draft) => {
+          setAiDraft(draft)
+          setCreateOpen(true)
+        }}
+      />
       <CreateQuoteDrawer
         open={createOpen}
-        onOpenChange={setCreateOpen}
+        onOpenChange={(open) => {
+          setCreateOpen(open)
+          if (!open) setAiDraft(null)
+        }}
         customers={customers}
         windowTypes={windowTypes}
         glassTypes={glassTypes}
+        initialDraft={aiDraft}
       />
       <QuoteDetailDrawer
         quoteId={detailQuoteId}

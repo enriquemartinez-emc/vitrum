@@ -33,6 +33,7 @@ import { inchesSchema } from "@/core/shared/dimensions"
 import { formatMoney } from "@/core/shared/money"
 import { quantitySchema } from "@/core/shared/quantity"
 import { previewCutPlanAction } from "@/features/inventory/actions"
+import type { QuoteDraft } from "@/features/quotes/ai/actions"
 import { createQuoteAction } from "@/features/quotes/actions"
 import { CustomerCombobox } from "@/features/quotes/components/customer-combobox"
 import { initialQuoteFormState, type QuoteFormState } from "@/features/quotes/form-state"
@@ -43,6 +44,7 @@ type CreateQuoteDrawerProps = {
   customers: Customer[]
   windowTypes: WindowType[]
   glassTypes: GlassType[]
+  initialDraft?: QuoteDraft | null
 }
 
 type DraftLineItem = {
@@ -98,6 +100,7 @@ function CreateQuoteForm({
   customers,
   windowTypes,
   glassTypes,
+  initialDraft,
 }: CreateQuoteDrawerProps) {
   const [state, formAction, isPending] = useActionState<QuoteFormState, FormData>(
     createQuoteAction,
@@ -109,10 +112,26 @@ function CreateQuoteForm({
   }, [state, onOpenChange])
 
   const [customerList, setCustomerList] = useState(customers)
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
-  const [lineItems, setLineItems] = useState<DraftLineItem[]>(() => [
-    emptyLineItem(crypto.randomUUID()),
-  ])
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(() =>
+    initialDraft?.matchedCustomerId
+      ? (customers.find((c) => c.id === initialDraft.matchedCustomerId) ?? null)
+      : null
+  )
+  const [lineItems, setLineItems] = useState<DraftLineItem[]>(() =>
+    initialDraft && initialDraft.lineItems.length > 0
+      ? initialDraft.lineItems.map((item) => ({
+          key: crypto.randomUUID(),
+          windowTypeId: String(item.windowTypeId),
+          glassTypeId: String(item.glassTypeId),
+          widthIn: String(item.widthIn),
+          heightIn: String(item.heightIn),
+          quantity: String(item.quantity),
+          cutPlan: null,
+          isChecking: false,
+          checkError: null,
+        }))
+      : [emptyLineItem(crypto.randomUUID())]
+  )
 
   function updateLineItem(key: string, patch: Partial<DraftLineItem>) {
     setLineItems((prev) =>
@@ -196,6 +215,12 @@ function CreateQuoteForm({
               setCustomerList((prev) => [...prev, customer])
             }
           />
+          {initialDraft?.extractedCustomerName && !selectedCustomer && (
+            <p className="text-xs text-muted-foreground">
+              AI mentioned &ldquo;{initialDraft.extractedCustomerName}&rdquo; — select or add
+              this customer.
+            </p>
+          )}
         </Field>
 
         <div className="flex flex-col gap-4">
