@@ -12,6 +12,9 @@ function dailyLimit(): number {
 
 export async function checkAiRateLimit(feature: string): Promise<{ allowed: boolean }> {
   const today = new Date().toISOString().slice(0, 10)
+  // Records this call under `feature` for observability, but the count
+  // returned is the total across every AI feature today — they share one
+  // free-tier API key, so the cap has to be global, not per-feature.
   const count = await incrementAiUsage(feature, today)
 
   return { allowed: count <= dailyLimit() }
