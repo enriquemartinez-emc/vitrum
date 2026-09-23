@@ -2,6 +2,8 @@
 
 A web app for running a window shop: quote custom windows, turn approved quotes into orders, and track installations.
 
+**Live app:** https://vitrum-alpha.vercel.app
+
 ## How it works
 
 1. A **customer** requests a **quote** for one or more windows, priced by window type, glass type, size, quantity, and labor.
