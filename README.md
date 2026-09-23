@@ -1,36 +1,27 @@
 # Vitrum
 
-A window shop business app: quoting, ordering, and installation tracking. Built with Next.js, shadcn/ui, and Supabase.
+A web app for running a window shop: quote custom windows, turn approved quotes into orders, and track installations.
 
-## Local development
+## How it works
 
-This project uses a local Supabase instance (Postgres) via the Supabase CLI and Docker.
+1. A **customer** requests a **quote** for one or more windows, priced by window type, glass type, size, quantity, and labor.
+2. The customer **approves** or **declines** the quote. Declined quotes are kept for history.
+3. An approved quote becomes an **order** with an agreed **installation date**.
+4. Once installed, the order is marked **complete**.
 
-```bash
-npx supabase start   # prints your local API URL and keys
-cp .env.example .env.local
-# fill in SUPABASE_URL and SUPABASE_SECRET_KEY from the `supabase start` output
-npm run dev
-```
+## Features
 
-If port 54321+ is already taken by another local Supabase project on your machine, edit the port numbers in `supabase/config.toml` before running `supabase start`.
+### AI-powered
 
-Schema changes live in `supabase/migrations/`; seed data lives in `supabase/seed.sql`. Run `npx supabase db reset --local` to reapply both against a fresh local database.
+- **Quote drafting** — describe a job in plain language ("2 double-hung 24x36 low-e for Maria Gonzalez") and get a draft quote with the customer and line items filled in, ready to review and price.
+- **Business reports chat** — ask questions like "what were our best-selling glass types last month?" and get answers from live revenue, order, and customer data.
+- **Inventory reorder digest** — a written summary of which glass types are running short for pending quotes, and what to reorder first.
 
-## Adding components
+### Core tools
 
-To add components to your app, run the following command:
-
-```bash
-npx shadcn@latest add button
-```
-
-This will place the ui components in the `components` directory.
-
-## Using components
-
-To use the components in your app, import them as follows:
-
-```tsx
-import { Button } from "@/components/ui/button";
-```
+- **Dashboard** — glass sales over time by glass type, pending orders, and at-a-glance order and inventory alerts.
+- **Customers** — add, edit, and remove customers.
+- **Products** — window types, glass types, and labor cost presets.
+- **Quotes** — build priced quotes with multiple line items and record the customer's decision.
+- **Orders** — create orders from approved quotes, schedule installation, and mark them complete.
+- **Inventory** — track glass stock levels.
