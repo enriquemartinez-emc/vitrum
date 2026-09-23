@@ -93,6 +93,10 @@ const data = {
           title: "Business Reports",
           url: "/dashboard/reports",
         },
+        {
+          title: "Reorder Digest",
+          url: "/dashboard/inventory-digest",
+        },
       ],
     },
   ],

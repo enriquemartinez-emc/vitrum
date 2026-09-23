@@ -141,6 +141,20 @@ export async function listQuotes(page: number): Promise<QuotesPage> {
   }
 }
 
+export async function listPendingQuotes(): Promise<PendingQuote[]> {
+  const { data, error } = await getDb()
+    .from("quotes")
+    .select("*, quote_line_items(*)")
+    .eq("status", "pending")
+    .order("created_at", { ascending: true })
+
+  if (error) throw error
+
+  return data
+    .map((row) => toQuote(row, row.quote_line_items))
+    .filter((quote): quote is PendingQuote => quote.status === "pending")
+}
+
 export async function getQuote(id: QuoteId): Promise<Quote | null> {
   const { data: quoteRow, error: quoteError } = await getDb()
     .from("quotes")
