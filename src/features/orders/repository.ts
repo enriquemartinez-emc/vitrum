@@ -191,6 +191,22 @@ export async function listOrders(page: number): Promise<OrdersPage> {
   }
 }
 
+// Scheduled (not yet installed) orders, soonest installation first — for a
+// dashboard widget, not the full paginated Orders list.
+export async function listPendingOrders(limit: number): Promise<OrderSummary[]> {
+  const { data, error } = await getDb()
+    .from("orders")
+    .select("*, quotes(customers(first_name,last_name), quote_line_items(line_total_cents))")
+    .eq("status", "scheduled")
+    .order("installation_date", { ascending: true })
+    .order("id", { ascending: true })
+    .limit(limit)
+
+  if (error) throw error
+
+  return data.map(toOrderSummary)
+}
+
 export type OrderDetailLineItem = {
   id: QuoteLineItemRow["id"]
   windowTypeName: string
