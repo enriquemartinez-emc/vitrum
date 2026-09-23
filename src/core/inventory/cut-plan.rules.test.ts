@@ -3,7 +3,11 @@ import { describe, expect, it } from "vitest"
 import { rectangleSchema } from "@/core/shared/dimensions"
 import { quantitySchema } from "@/core/shared/quantity"
 import { glassPieceSchema } from "@/core/inventory/glass-piece.types"
-import { guillotineSplit, suggestCutPlan } from "@/core/inventory/cut-plan.rules"
+import {
+  allocateFromRunningStock,
+  guillotineSplit,
+  suggestCutPlan,
+} from "@/core/inventory/cut-plan.rules"
 import type { CutRequest } from "@/core/inventory/cut-plan.types"
 
 const GLASS_TYPE_ID = 1
@@ -176,5 +180,43 @@ describe("suggestCutPlan", () => {
       widthIn: 24,
       heightIn: 36,
     })
+  })
+})
+
+describe("allocateFromRunningStock", () => {
+  it("decrements the shared map so a second call sees less stock than the first", () => {
+    const candidates = [piece({ id: 1, widthIn: 24, heightIn: 36, quantity: 3 })]
+    const remainingByPieceId = new Map<number, number>()
+
+    const first = allocateFromRunningStock(
+      request({ widthIn: 24, heightIn: 36, quantity: 2 }),
+      candidates,
+      remainingByPieceId
+    )
+    expect(first.status).toBe("fulfilled")
+    expect(remainingByPieceId.get(1)).toBe(1)
+
+    const second = allocateFromRunningStock(
+      request({ widthIn: 24, heightIn: 36, quantity: 2 }),
+      candidates,
+      remainingByPieceId
+    )
+    expect(second.status).toBe("partial")
+    if (second.status !== "partial") throw new Error("expected partial plan")
+    expect(second.unfulfilledQuantity).toBe(1)
+    expect(remainingByPieceId.get(1)).toBe(0)
+  })
+
+  it("does not mutate the candidates array's own quantity, only the tracking map", () => {
+    const candidates = [piece({ id: 1, widthIn: 24, heightIn: 36, quantity: 3 })]
+    const remainingByPieceId = new Map<number, number>()
+
+    allocateFromRunningStock(
+      request({ widthIn: 24, heightIn: 36, quantity: 2 }),
+      candidates,
+      remainingByPieceId
+    )
+
+    expect(candidates[0].quantity).toBe(3)
   })
 })

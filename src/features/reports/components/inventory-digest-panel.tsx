@@ -26,26 +26,25 @@ import { narrateShortageDigestAction } from "@/features/reports/ai/actions"
 import type { ShortageDigestItem } from "@/features/reports/shortage-digest"
 
 export function InventoryDigestPanel({ items }: { items: ShortageDigestItem[] }) {
-  const [status, setStatus] = useState<"idle" | "loading" | "error">("idle")
+  const [isLoading, setIsLoading] = useState(false)
   const [summary, setSummary] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   async function handleGenerate() {
-    setStatus("loading")
+    setIsLoading(true)
     setError(null)
 
     try {
       const result = await narrateShortageDigestAction()
       if (result.status === "error") {
-        setStatus("error")
         setError(result.message)
         return
       }
-      setStatus("idle")
       setSummary(result.summary)
     } catch {
-      setStatus("error")
       setError("Something went wrong. Try again.")
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -101,11 +100,13 @@ export function InventoryDigestPanel({ items }: { items: ShortageDigestItem[] })
         </Table>
       </div>
 
-      {summary && (
+      {summary !== null && (
         <Alert>
           <SparklesIcon />
           <AlertTitle>Recommendation</AlertTitle>
-          <AlertDescription>{summary}</AlertDescription>
+          <AlertDescription>
+            {summary || "The assistant didn't return anything — try regenerating."}
+          </AlertDescription>
         </Alert>
       )}
 
@@ -115,10 +116,10 @@ export function InventoryDigestPanel({ items }: { items: ShortageDigestItem[] })
         variant="outline"
         className="self-start"
         onClick={handleGenerate}
-        disabled={status === "loading"}
+        disabled={isLoading}
       >
-        {status === "loading" ? <Spinner data-icon="inline-start" /> : <SparklesIcon data-icon="inline-start" />}
-        {summary ? "Regenerate recommendation" : "Get AI recommendation"}
+        {isLoading ? <Spinner data-icon="inline-start" /> : <SparklesIcon data-icon="inline-start" />}
+        {summary !== null ? "Regenerate recommendation" : "Get AI recommendation"}
       </Button>
     </div>
   )

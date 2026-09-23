@@ -104,7 +104,7 @@ describe("findGlassShortages", () => {
     ])
   })
 
-  it("reports no shortage for a glass type with no stock loaded at all", () => {
+  it("reports a full shortage for a glass type with no stock loaded at all", () => {
     const stock = new Map<number, never[]>()
     const quotes = [pendingQuote(1, [{ glassTypeId: 1, widthIn: 24, heightIn: 36, quantity: 1 }])]
 

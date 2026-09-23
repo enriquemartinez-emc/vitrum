@@ -144,3 +144,32 @@ export function suggestCutPlan(
     unfulfilledQuantity: quantitySchema.parse(remaining),
   }
 }
+
+// Plans one cut request against a *shared, mutable* view of remaining stock:
+// `remainingByPieceId` is read for each candidate's current availability (a
+// piece not yet touched defaults to its full on-hand quantity) and updated
+// in place with whatever this request allocates. Passing the same map across
+// repeated calls — one per line item — is what lets multiple requests for
+// the same glass type be planned together without over-allocating a piece
+// that an earlier request already claimed some of.
+export function allocateFromRunningStock(
+  request: CutRequest,
+  candidates: GlassPiece[],
+  remainingByPieceId: Map<number, number>
+): CutPlan {
+  const available = candidates.flatMap((piece) => {
+    const remaining = remainingByPieceId.get(piece.id) ?? piece.quantity
+    return remaining > 0
+      ? [{ ...piece, quantity: quantitySchema.parse(remaining) }]
+      : []
+  })
+
+  const plan = suggestCutPlan(request, available)
+
+  for (const allocation of plan.allocations) {
+    const remaining = remainingByPieceId.get(allocation.piece.id) ?? allocation.piece.quantity
+    remainingByPieceId.set(allocation.piece.id, remaining - allocation.quantityToCut)
+  }
+
+  return plan
+}

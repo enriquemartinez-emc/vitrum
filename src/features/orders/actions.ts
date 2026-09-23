@@ -4,14 +4,13 @@ import { revalidatePath } from "next/cache"
 import { z } from "zod"
 
 import type { GlassPiece } from "@/core/inventory/glass-piece.types"
-import { suggestCutPlan } from "@/core/inventory/cut-plan.rules"
+import { allocateFromRunningStock } from "@/core/inventory/cut-plan.rules"
 import type { CutAllocation } from "@/core/inventory/cut-plan.types"
 import { completeOrder } from "@/core/orders/order.rules"
 import { orderIdSchema } from "@/core/orders/order.types"
 import { glassTypeIdSchema } from "@/core/products/glass-type.types"
 import { approveQuote } from "@/core/quotes/quote.rules"
 import { quoteIdSchema, type QuoteLineItem } from "@/core/quotes/quote.types"
-import { quantitySchema } from "@/core/shared/quantity"
 import * as inventoryRepository from "@/features/inventory/repository"
 import type { OrderFormState } from "@/features/orders/form-state"
 import type { OrderDetail } from "@/features/orders/repository"
@@ -51,21 +50,16 @@ async function planLineItems(lineItems: QuoteLineItem[]): Promise<
 
   for (const lineItem of lineItems) {
     const candidates = await candidatesFor(lineItem.glassTypeId)
-    const available = candidates.flatMap((piece) => {
-      const remaining = remainingByPieceId.get(piece.id) ?? 0
-      return remaining > 0
-        ? [{ ...piece, quantity: quantitySchema.parse(remaining) }]
-        : []
-    })
 
-    const plan = suggestCutPlan(
+    const plan = allocateFromRunningStock(
       {
         glassTypeId: lineItem.glassTypeId,
         widthIn: lineItem.widthIn,
         heightIn: lineItem.heightIn,
         quantity: lineItem.quantity,
       },
-      available
+      candidates,
+      remainingByPieceId
     )
 
     if (plan.status === "partial") {
@@ -76,10 +70,6 @@ async function planLineItems(lineItems: QuoteLineItem[]): Promise<
       continue
     }
 
-    for (const allocation of plan.allocations) {
-      const remaining = remainingByPieceId.get(allocation.piece.id) ?? 0
-      remainingByPieceId.set(allocation.piece.id, remaining - allocation.quantityToCut)
-    }
     allocations.push(...plan.allocations)
   }
 

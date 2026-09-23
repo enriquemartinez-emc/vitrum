@@ -41,32 +41,32 @@ export async function computeShortageDigest(): Promise<ShortageDigestItem[]> {
   const shortages = findGlassShortages(pendingQuotes, stockByGlassType)
   if (shortages.length === 0) return []
 
+  const glassTypes = await glassTypesRepository.listAllGlassTypes()
+  const glassTypeNameById = new Map<number, string>(
+    glassTypes.map((glassType) => [glassType.id, glassType.name])
+  )
+
   const quotesById = new Map<number, (typeof pendingQuotes)[number]>(
     pendingQuotes.map((quote) => [quote.id, quote])
   )
   const now = Date.now()
 
-  const items = await Promise.all(
-    shortages.map(async (shortage) => {
-      const glassType = await glassTypesRepository.getGlassType(
-        glassTypeIdSchema.parse(shortage.glassTypeId)
-      )
-      const oldestPendingDays = Math.max(
-        ...shortage.affectedQuoteIds.map((id) => {
-          const quote = quotesById.get(id)
-          return quote ? Math.floor((now - new Date(quote.createdAt).getTime()) / MS_PER_DAY) : 0
-        })
-      )
+  const items = shortages.map((shortage) => {
+    const oldestPendingDays = Math.max(
+      ...shortage.affectedQuoteIds.map((id) => {
+        const quote = quotesById.get(id)
+        return quote ? Math.floor((now - new Date(quote.createdAt).getTime()) / MS_PER_DAY) : 0
+      })
+    )
 
-      return {
-        glassTypeId: shortage.glassTypeId,
-        glassTypeName: glassType?.name ?? "Unknown glass type",
-        shortfallQuantity: shortage.shortfallQuantity,
-        affectedQuoteCount: shortage.affectedQuoteIds.length,
-        oldestPendingDays,
-      }
-    })
-  )
+    return {
+      glassTypeId: shortage.glassTypeId,
+      glassTypeName: glassTypeNameById.get(shortage.glassTypeId) ?? "Unknown glass type",
+      shortfallQuantity: shortage.shortfallQuantity,
+      affectedQuoteCount: shortage.affectedQuoteIds.length,
+      oldestPendingDays,
+    }
+  })
 
   return items.sort((a, b) => b.shortfallQuantity - a.shortfallQuantity)
 }

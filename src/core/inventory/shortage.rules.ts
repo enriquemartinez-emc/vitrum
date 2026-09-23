@@ -1,7 +1,6 @@
-import { suggestCutPlan } from "@/core/inventory/cut-plan.rules"
+import { allocateFromRunningStock } from "@/core/inventory/cut-plan.rules"
 import type { GlassPiece } from "@/core/inventory/glass-piece.types"
 import type { PendingQuote } from "@/core/quotes/quote.types"
-import { quantitySchema } from "@/core/shared/quantity"
 
 export type GlassShortage = {
   glassTypeId: number
@@ -10,11 +9,12 @@ export type GlassShortage = {
 }
 
 // Simulates cutting every pending quote's line items against current stock,
-// in one pass sharing a single running view of inventory — the same
-// allocate-and-decrement approach orders/actions.ts uses for one order's line
-// items, extended across the whole pending backlog. Nothing is written
-// anywhere; this only answers "if every pending quote were approved right
-// now, which glass types would come up short, and by how much."
+// in one pass sharing a single running view of inventory via
+// allocateFromRunningStock — the same allocation primitive orders/actions.ts
+// uses for one order's line items, extended across the whole pending
+// backlog. Nothing is written anywhere; this only answers "if every pending
+// quote were approved right now, which glass types would come up short, and
+// by how much."
 export function findGlassShortages(
   pendingQuotes: PendingQuote[],
   stockByGlassType: Map<number, GlassPiece[]>
@@ -24,28 +24,18 @@ export function findGlassShortages(
 
   for (const quote of pendingQuotes) {
     for (const lineItem of quote.lineItems) {
-      const pieces = stockByGlassType.get(lineItem.glassTypeId) ?? []
-      const available = pieces.flatMap((piece) => {
-        const remaining = remainingByPieceId.get(piece.id) ?? piece.quantity
-        return remaining > 0
-          ? [{ ...piece, quantity: quantitySchema.parse(remaining) }]
-          : []
-      })
+      const candidates = stockByGlassType.get(lineItem.glassTypeId) ?? []
 
-      const plan = suggestCutPlan(
+      const plan = allocateFromRunningStock(
         {
           glassTypeId: lineItem.glassTypeId,
           widthIn: lineItem.widthIn,
           heightIn: lineItem.heightIn,
           quantity: lineItem.quantity,
         },
-        available
+        candidates,
+        remainingByPieceId
       )
-
-      for (const allocation of plan.allocations) {
-        const remaining = remainingByPieceId.get(allocation.piece.id) ?? allocation.piece.quantity
-        remainingByPieceId.set(allocation.piece.id, remaining - allocation.quantityToCut)
-      }
 
       if (plan.status === "partial") {
         const existing = shortageByGlassType.get(lineItem.glassTypeId)
