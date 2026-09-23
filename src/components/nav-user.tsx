@@ -27,6 +27,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
+import { signOutAction } from "@/features/auth/actions"
 import { EllipsisVerticalIcon, CircleUserRoundIcon, SunMoonIcon, SunIcon, MoonIcon, MonitorIcon, LogOutIcon } from "lucide-react"
 
 export function NavUser({
@@ -115,7 +116,7 @@ export function NavUser({
               </DropdownMenuSub>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={() => signOutAction()}>
               <LogOutIcon
               />
               Log out

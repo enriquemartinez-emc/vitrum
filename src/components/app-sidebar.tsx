@@ -14,14 +14,11 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
+import { DEMO_USER } from "@/lib/demo-user"
 import { FileTextIcon, ShoppingCartIcon, CameraIcon, Settings2Icon, PackageIcon, TagIcon, CommandIcon, LayoutDashboardIcon, ChartColumnIcon } from "lucide-react"
 
 const data = {
-  user: {
-    name: "admin",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
-  },
+  user: DEMO_USER,
   navTop: {
     title: "Dashboard",
     url: "/dashboard",
