@@ -322,6 +322,14 @@ export type Database = {
           total_sqft: number
         }[]
       }
+      get_glass_type_sales_by_day: {
+        Args: { p_from: string; p_to: string }
+        Returns: {
+          glass_type_name: string
+          sale_date: string
+          total_cents: number
+        }[]
+      }
       get_order_status_summary: {
         Args: { p_as_of?: string }
         Returns: {

@@ -20,6 +20,29 @@ export async function getRevenueSummary(from: string, to: string): Promise<Reven
   }
 }
 
+export type GlassTypeSaleByDay = {
+  saleDate: string
+  glassTypeName: string
+  totalCents: number
+}
+
+export async function getGlassTypeSalesByDay(
+  from: string,
+  to: string
+): Promise<GlassTypeSaleByDay[]> {
+  const { data, error } = await getDb().rpc("get_glass_type_sales_by_day", {
+    p_from: from,
+    p_to: to,
+  })
+  if (error) throw error
+
+  return data.map((row) => ({
+    saleDate: row.sale_date,
+    glassTypeName: row.glass_type_name,
+    totalCents: row.total_cents,
+  }))
+}
+
 export type OrderStatusSummary = {
   scheduledCount: number
   overdueCount: number
